@@ -159,7 +159,8 @@ test('Diário implementa registro Watch -> iPhone -> IndexedDB com deduplicaçã
   assert.match(ios, /setMedicationEventAvailableHandler/);
   assert.doesNotMatch(ios, /Remédio vindo do iPhone/);
 
-  assert.match(scene, /rootViewController = DiarioBridgeViewController\(\)/);
+  assert.match(scene, /rootViewController = AssistenteBridgeViewController\(\)/);
+  assert.match(ios, /final class AssistenteBridgeViewController: CAPBridgeViewController/);
   assert.match(watch, /func registerMedication\(_ rawMedicine: String\)/);
   assert.match(watch, /UUID\(\)\.uuidString/);
   assert.match(watch, /session\.sendMessage/);

@@ -1,6 +1,6 @@
 # Assistente de Medicação — MM Registro
 
-Repositório unificado do **Assistente de Medicação 4.10**, contendo o PWA publicado no Cloudflare Pages e a camada Capacitor para iOS.
+Repositório unificado do **Assistente de Medicação 1.0**, contendo o PWA publicado no Cloudflare Pages e a camada Capacitor para iOS.
 
 ## Assistente 4.10 — fecha a janela de startup Watch → iPhone
 

@@ -3020,7 +3020,7 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (!/^https?:$/.test(location.protocol)) return;
   try {
-    const registration = await navigator.serviceWorker.register("./sw.js?v=4.10", {
+    const registration = await navigator.serviceWorker.register("./sw.js?v=1.0", {
       updateViaCache: "none"
     });
     try { await registration.update(); } catch (_) {}
