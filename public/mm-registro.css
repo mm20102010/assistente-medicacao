@@ -1,0 +1,2708 @@
+/*
+ * MM WebApps Design System 1.0 — MM Registro Core 4.0
+ * Família: apps de Registro -> Histórico -> Ferramentas
+ * Camada exclusivamente visual. Não contém regras de negócio.
+ */
+
+:root {
+  --mm-bg-primary:#08090c;
+  --mm-bg-secondary:#0d1015;
+  --mm-bg-elevated:#11161e;
+  --mm-app-background:radial-gradient(circle at top left,rgba(87,146,212,.16),transparent 24%),radial-gradient(circle at 82% 0%,rgba(46,114,183,.18),transparent 26%),radial-gradient(circle at 10% 88%,rgba(34,76,122,.14),transparent 28%),linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%);
+  --mm-text-primary:rgba(255,255,255,.96);
+  --mm-text-secondary:rgba(255,255,255,.68);
+  --mm-text-tertiary:rgba(255,255,255,.46);
+  --mm-text-disabled:rgba(255,255,255,.30);
+  --mm-surface:rgba(255,255,255,.065);
+  --mm-surface-elevated:rgba(255,255,255,.09);
+  --mm-surface-pressed:rgba(255,255,255,.12);
+  --mm-surface-strong:linear-gradient(180deg,rgba(13,31,49,.88),rgba(12,28,44,.80));
+  --mm-history-surface:var(--mm-surface);
+  --mm-history-border:rgba(159,198,236,.18);
+  --mm-shadow-inset:inset 0 1px 0 rgba(255,255,255,.055);
+  --mm-border:rgba(255,255,255,.10);
+  --mm-border-strong:rgba(255,255,255,.16);
+  --mm-danger:#ff8f87;
+  --mm-success:#7dd8a8;
+  --mm-warning:#f0c26d;
+  --mm-accent:#9dccff;
+  --mm-accent-strong:#68a8e6;
+  --mm-accent-contrast:#07111c;
+  --mm-radius-card:24px;
+  --mm-radius-card-small:20px;
+  --mm-radius-field:16px;
+  --mm-radius-button:18px;
+  --mm-radius-button-large:20px;
+  --mm-radius-sheet:28px;
+  --mm-radius-tabbar:28px;
+  --mm-space-1:4px;
+  --mm-space-2:8px;
+  --mm-space-3:12px;
+  --mm-space-4:16px;
+  --mm-space-5:20px;
+  --mm-space-6:24px;
+  --mm-space-7:32px;
+  --mm-font-display:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mm-font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  --mm-safe-top:env(safe-area-inset-top,0px);
+  --mm-safe-right:env(safe-area-inset-right,0px);
+  --mm-safe-bottom:env(safe-area-inset-bottom,0px);
+  --mm-safe-left:env(safe-area-inset-left,0px);
+  --mm-content-max:720px;
+  --mm-tabbar-max:540px;
+  --mm-tabbar-height:64px;
+}
+
+
+html {
+  color-scheme:dark;
+  background-color:#07111c;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-attachment:fixed;
+}
+body.mm-registro {
+  min-height:100%;
+  min-height:100dvh;
+  margin:0;
+  color:var(--mm-text-primary);
+  font-family:var(--mm-font-ui);
+  font-size:17px;
+  background-color:#07111c !important;
+  background-image:var(--mm-app-background) !important;
+  background-repeat:no-repeat !important;
+  background-size:cover !important;
+  background-attachment:fixed !important;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  padding-bottom:calc(var(--mm-tabbar-height) + var(--mm-safe-bottom) + 34px) !important;
+}
+body.mm-registro *,body.mm-registro *::before,body.mm-registro *::after{box-sizing:border-box}
+body.mm-registro button,body.mm-registro input,body.mm-registro select,body.mm-registro textarea{font:inherit}
+body.mm-registro button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+/* Estrutura canônica MM Registro 2.2 */
+body.mm-registro .mm-app-shell{
+  width:min(var(--mm-content-max),100%);
+  max-width:var(--mm-content-max);
+  margin-inline:auto;
+  padding-top:calc(var(--mm-safe-top) + 18px);
+  padding-left:calc(var(--mm-space-4) + var(--mm-safe-left));
+  padding-right:calc(var(--mm-space-4) + var(--mm-safe-right));
+}
+body.mm-registro .mm-view-panel,
+body.mm-registro .mm-view-content{min-width:0;width:100%;}
+
+/* Cabeçalho e tipografia */
+body.mm-registro h1,body.mm-registro h2,body.mm-registro h3,
+body.mm-registro .hero-value,body.mm-registro .summary-number {
+  font-family:var(--mm-font-display);
+  color:var(--mm-text-primary);
+}
+body.mm-registro h1{font-size:clamp(30px,7vw,32px);line-height:1.08;letter-spacing:-.025em;font-weight:700}
+body.mm-registro h2{font-size:22px;line-height:1.16;letter-spacing:-.015em;font-weight:700}
+body.mm-registro h3{font-size:20px;line-height:1.2;font-weight:600}
+body.mm-registro .eyebrow,
+body.mm-registro .sheet-kicker,
+body.mm-registro .section-kicker,
+body.mm-registro .hero-label{
+  font-family:var(--mm-font-ui) !important;
+  color:var(--mm-text-tertiary) !important;
+  font-size:12px !important;
+  line-height:1.2;
+  font-weight:650 !important;
+  letter-spacing:.10em !important;
+  text-transform:uppercase;
+}
+body.mm-registro .topbar p,body.mm-registro .status-row,
+body.mm-registro .hero-sub,body.mm-registro .section-subcopy,
+body.mm-registro small{color:var(--mm-text-secondary)}
+
+body.mm-registro .mm-primary-header{
+  position:sticky;
+  top:0;
+  z-index:90;
+  width:100%;
+  margin:calc(0px - var(--mm-safe-top) - 18px) 0 20px;
+  padding:calc(var(--mm-safe-top) + 20px) 0 10px;
+  background-color:#07111c;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center top;
+  background-attachment:fixed;
+  box-shadow:none;
+}
+body.mm-registro .mm-primary-header__inner{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  width:100%;
+}
+body.mm-registro .mm-primary-header__title{min-width:0;}
+body.mm-registro .mm-primary-header h1{margin:4px 0 0;}
+body.mm-registro .mm-primary-header__status{margin-top:5px;}
+body.mm-registro .mm-primary-header__status p{
+  margin:0;
+  color:var(--mm-text-secondary);
+  font-family:var(--mm-font-ui);
+  font-size:14px;
+  line-height:1.35;
+}
+body.mm-registro .mm-primary-header__status[hidden]{display:none;}
+body.mm-registro .mm-icon-button{
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  border-radius:14px;
+  border:1px solid var(--mm-border);
+  background:var(--mm-surface-elevated);
+  color:var(--mm-text-primary);
+  display:grid;
+  place-items:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+  flex:0 0 auto;
+}
+body.mm-registro .mm-icon-button .mm-icon{width:22px;height:22px;}
+
+/* Superfícies e cards */
+body.mm-registro .mm-card,
+body.mm-registro .panel,
+body.mm-registro .list-card,
+body.mm-registro .summary-card,
+body.mm-registro .chart-card,
+body.mm-registro .chart-filter-card,
+body.mm-registro .history-tools {
+  border:1px solid var(--mm-border) !important;
+  border-radius:var(--mm-radius-card) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.068),rgba(255,255,255,.048)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 16px 36px rgba(0,0,0,.13) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro .hero-card{
+  border-radius:var(--mm-radius-card) !important;
+  border:1px solid var(--mm-border) !important;
+  background-image:
+    radial-gradient(circle at 82% 16%,rgba(157,188,232,.18),transparent 32%),
+    linear-gradient(150deg,#1a2432 0%,#111821 48%,#0b1017 100%) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 42px rgba(0,0,0,.18) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro--diario .panel{padding:18px !important}
+body.mm-registro .quick-card{border-radius:var(--mm-radius-card-small) !important;background:var(--mm-surface) !important;border:1px solid var(--mm-border) !important}
+body.mm-registro .list-card,body.mm-registro .summary-card{border-radius:var(--mm-radius-card) !important}
+
+/* Botões */
+body.mm-registro .primary-button,
+body.mm-registro .primary-btn{
+  min-height:50px !important;
+  border-radius:var(--mm-radius-button-large) !important;
+  padding:12px 18px !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  background:linear-gradient(180deg,var(--mm-accent),var(--mm-accent-strong)) !important;
+  color:var(--mm-accent-contrast) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  font-weight:700 !important;
+  line-height:1.15;
+  letter-spacing:-.01em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 10px 24px rgba(0,0,0,.18) !important;
+}
+body.mm-registro--diario .primary-btn{color:#07111c !important}
+body.mm-registro .secondary-button,
+body.mm-registro .secondary-btn,
+body.mm-registro .small-btn,
+body.mm-registro .clear-filters-btn,
+body.mm-registro .filter-clear{
+  min-height:48px;
+  border-radius:var(--mm-radius-button) !important;
+  border:1px solid var(--mm-border-strong) !important;
+  background:var(--mm-surface-elevated) !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:650 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055) !important;
+}
+body.mm-registro .text-button,body.mm-registro .text-btn,body.mm-registro .close-btn,body.mm-registro .back-button{
+  font-family:var(--mm-font-ui) !important;
+  color:var(--mm-accent) !important;
+  font-size:15px !important;
+  font-weight:650 !important;
+}
+body.mm-registro .danger-outline-btn{border-color:rgba(255,143,135,.34) !important;color:#ffaaa4 !important;background:rgba(255,91,83,.055) !important}
+body.mm-registro button:disabled{opacity:.46}
+
+/* Campos e filtros */
+body.mm-registro label>span:first-child,
+body.mm-registro .field-label,
+body.mm-registro .filter-field>span:first-child{
+  font-family:var(--mm-font-ui);
+  color:var(--mm-text-secondary);
+  font-size:15px;
+  font-weight:550;
+}
+body.mm-registro input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+body.mm-registro select,
+body.mm-registro textarea,
+body.mm-registro .datetime-control,
+body.mm-registro .filter-select-btn,
+body.mm-registro .date-control,
+body.mm-registro .search-wrap,
+body.mm-registro .frequency-picker-trigger{
+  min-height:48px !important;
+  border-radius:var(--mm-radius-field) !important;
+  border:1px solid var(--mm-border) !important;
+  background:rgba(255,255,255,.055) !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+body.mm-registro input::placeholder,body.mm-registro textarea::placeholder{color:var(--mm-text-tertiary)}
+body.mm-registro input:focus-visible,body.mm-registro select:focus-visible,body.mm-registro textarea:focus-visible,
+body.mm-registro button:focus-visible{outline:2px solid color-mix(in srgb,var(--mm-accent) 72%,transparent);outline-offset:2px}
+body.mm-registro .filter-row{gap:12px}
+body.mm-registro--dentes .filter-row{border-radius:var(--mm-radius-card-small) !important;background:var(--mm-surface) !important;box-shadow:none !important}
+body.mm-registro--diario .history-tools{padding:14px !important;margin-top:4px !important}
+
+/* Ferramentas / linhas de configuração */
+body.mm-registro .settings-group,body.mm-registro .more-panel{width:min(var(--mm-content-max),100%);margin-inline:auto}
+body.mm-registro .settings-group{margin-bottom:24px}
+body.mm-registro .settings-group h3,
+body.mm-registro .mm-tools-heading{
+  margin:0 6px 9px !important;
+  font-family:var(--mm-font-ui) !important;
+  color:var(--mm-text-tertiary) !important;
+  font-size:12px !important;
+  line-height:1.2;
+  font-weight:650 !important;
+  letter-spacing:.10em !important;
+  text-transform:uppercase;
+}
+body.mm-registro .settings-row,
+body.mm-registro .more-menu-list .menu-item{
+  width:100%;
+  min-height:64px;
+  display:flex !important;
+  align-items:center;
+  gap:13px;
+  padding:13px 15px !important;
+  margin:0 !important;
+  border:0 !important;
+  border-bottom:1px solid var(--mm-border) !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.045)) !important;
+  color:var(--mm-text-primary) !important;
+  text-align:left;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro .settings-group>.settings-row:nth-child(2),
+body.mm-registro .more-menu-list>.menu-item:first-child{border-radius:var(--mm-radius-card-small) var(--mm-radius-card-small) 0 0 !important}
+body.mm-registro .settings-group>.settings-row:last-child,
+body.mm-registro .more-menu-list>.menu-item:last-child{border-radius:0 0 var(--mm-radius-card-small) var(--mm-radius-card-small) !important;border-bottom:0 !important}
+body.mm-registro .settings-group>.settings-row:nth-child(2):last-child,
+body.mm-registro .more-menu-list>.menu-item:first-child:last-child{border-radius:var(--mm-radius-card-small) !important}
+body.mm-registro .settings-row>span:not(.mm-leading-icon),
+body.mm-registro .menu-item>div{flex:1;min-width:0}
+body.mm-registro .settings-row strong,body.mm-registro .menu-item strong{font-family:var(--mm-font-ui) !important;font-size:16px !important;line-height:1.22;font-weight:650 !important;color:var(--mm-text-primary)}
+body.mm-registro .settings-row small,body.mm-registro .menu-item small{font-family:var(--mm-font-ui) !important;font-size:13px !important;line-height:1.38;color:var(--mm-text-secondary) !important;margin-top:3px}
+body.mm-registro .mm-leading-icon{width:24px;height:24px;flex:0 0 24px;color:var(--mm-accent);display:grid;place-items:center}
+body.mm-registro .mm-leading-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body.mm-registro .mm-row-chevron{width:18px;height:18px;flex:0 0 18px;color:var(--mm-text-tertiary);display:grid;place-items:center}
+body.mm-registro .mm-row-chevron svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body.mm-registro .menu-list{gap:0 !important}
+body.mm-registro .more-menu-list{border-radius:var(--mm-radius-card-small);overflow:hidden}
+body.mm-registro .tools-version-footer,body.mm-registro .app-version{font-family:var(--mm-font-ui) !important;font-size:11px !important;line-height:1.35;color:var(--mm-text-tertiary) !important;letter-spacing:.03em;text-align:center}
+
+/* MM Registro 2.53 — destructive actions live in a deliberately isolated safety zone.
+   This prevents accidental taps while scrolling through normal Tools actions. */
+body.mm-registro .mm-destructive-zone{
+  width:min(var(--mm-content-max),100%);
+  margin:clamp(180px,28vh,320px) auto 36px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,143,135,.12);
+}
+body.mm-registro .mm-destructive-zone>button{width:100%;}
+/* MM Registro 2.54 — the global destructive action has one canonical visual in every app.
+   The shape follows the Diario liquid-glass danger button; apps must not wrap it in settings-row. */
+body.mm-registro .mm-destructive-zone>.danger-outline-btn{
+  position:relative !important;
+  isolation:isolate !important;
+  overflow:hidden !important;
+  min-height:60px !important;
+  margin:0 !important;
+  padding:13px 18px !important;
+  border:1px solid rgba(255,213,217,.28) !important;
+  border-radius:20px !important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 22%,rgba(255,255,255,.012) 54%,rgba(255,255,255,0) 100%),
+    linear-gradient(180deg,rgba(180,74,84,.72),rgba(92,28,36,.68)) !important;
+  color:#fff8f7 !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:18px !important;
+  font-weight:760 !important;
+  letter-spacing:-.01em !important;
+  text-align:center !important;
+  backdrop-filter:blur(20px) saturate(1.35) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.35) !important;
+  box-shadow:0 14px 28px rgba(42,10,14,.18),inset 0 1px 0 rgba(255,255,255,.20) !important;
+}
+body.mm-registro .mm-destructive-zone>.danger-outline-btn::before{
+  content:"";position:absolute;left:10px;right:10px;top:2px;height:34%;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.08) 48%,rgba(255,255,255,0) 100%);
+  pointer-events:none;opacity:.9;
+}
+body.mm-registro .mm-destructive-zone>.danger-outline-btn::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(140% 95% at 50% 0%,rgba(255,255,255,.08),rgba(255,255,255,0) 55%),linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0) 44%);
+  pointer-events:none;
+}
+
+
+/* SVGs padronizados */
+body.mm-registro .mm-icon{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body.mm-registro .mm-icon--small{width:18px;height:18px}
+
+/* Tab bar canônica MM Registro 2.2 */
+body.mm-registro .mm-tabbar{
+  position:fixed;
+  top:auto;
+  left:50%;
+  right:auto;
+  bottom:calc(var(--mm-safe-bottom) + 10px);
+  width:min(var(--mm-tabbar-max),calc(100% - 28px));
+  min-height:var(--mm-tabbar-height);
+  height:auto;
+  margin:0;
+  padding:6px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:var(--mm-radius-tabbar);
+  background:rgba(13,23,39,.78);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 18px 44px rgba(0,0,0,.28);
+  backdrop-filter:blur(28px) saturate(145%);
+  -webkit-backdrop-filter:blur(28px) saturate(145%);
+  transform:translate3d(-50%,0,0);
+  -webkit-transform:translate3d(-50%,0,0);
+  z-index:80;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+}
+body.mm-registro .mm-tabbar__button{
+  min-width:0;
+  min-height:52px;
+  height:52px;
+  margin:0;
+  padding:6px 4px 5px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  border:0;
+  border-radius:20px;
+  background:transparent;
+  color:var(--mm-text-tertiary);
+  box-shadow:none;
+  font-family:var(--mm-font-ui);
+}
+body.mm-registro .mm-tabbar__button.is-active,
+body.mm-registro .mm-tabbar__button[aria-selected="true"]{
+  background:rgba(255,255,255,.095);
+  color:var(--mm-text-primary);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
+}
+body.mm-registro .mm-tabbar__icon{width:23px;height:23px;display:grid;place-items:center;color:inherit;}
+body.mm-registro .mm-tabbar__icon .mm-icon{width:23px;height:23px;}
+body.mm-registro .mm-tabbar__label{
+  display:block;
+  margin:0;
+  font-family:var(--mm-font-ui);
+  font-size:11px;
+  line-height:1;
+  font-weight:650;
+  letter-spacing:0;
+  color:inherit;
+}
+body.mm-registro.tabbar-suspended .mm-tabbar{opacity:0;visibility:hidden;pointer-events:none;}
+
+/* Sheets, dialogs e secondary views */
+body.mm-registro .sheet:not(.export-sheet){
+  border-radius:var(--mm-radius-sheet) var(--mm-radius-sheet) 0 0 !important;
+  background:linear-gradient(180deg,rgba(10,24,39,.97),rgba(8,17,28,.985)) !important;
+  border:1px solid var(--mm-border-strong) !important;
+  border-bottom:0 !important;
+  box-shadow:0 -20px 48px rgba(0,0,0,.32) !important;
+  backdrop-filter:blur(24px) saturate(125%) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(125%) !important;
+}
+body.mm-registro .sheet.centered-sheet{border-radius:var(--mm-radius-sheet) !important;border:1px solid var(--mm-border-strong) !important;border-bottom:1px solid var(--mm-border-strong) !important}
+body.mm-registro .sheet-title-row h2,body.mm-registro .sheet>h2{font-family:var(--mm-font-display);font-size:22px !important}
+body.mm-registro .sheet-close,body.mm-registro .back-circle{
+  min-width:44px !important;min-height:44px !important;width:44px !important;height:44px !important;
+  border-radius:50% !important;border:1px solid var(--mm-border) !important;background:var(--mm-surface-elevated) !important;color:var(--mm-text-primary) !important;
+  display:grid !important;place-items:center !important;font-family:var(--mm-font-ui) !important;font-size:24px !important;
+}
+body.mm-registro .dialog{border-radius:var(--mm-radius-sheet) !important;background:linear-gradient(180deg,#151a22,#0b0e13) !important;border:1px solid var(--mm-border-strong) !important;color:var(--mm-text-primary)}
+body.mm-registro .full-panel{background:var(--mm-app-background) !important;color:var(--mm-text-primary)}
+body.mm-registro .full-header{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:10px;width:min(var(--mm-content-max),100%);margin:0 auto 18px !important;padding-left:0 !important;padding-right:0 !important}
+body.mm-registro .full-header h2{font-family:var(--mm-font-display);font-size:28px;line-height:1.12;margin:4px 0 0}
+@media(max-width:520px){body.mm-registro .full-header{grid-template-columns:48px minmax(0,1fr) 82px}}
+
+/* Secondary header canônico MM Registro 2.47 — seamless canonical canvas + app identity */
+body.mm-registro .mm-secondary-header{
+  position:sticky;
+  top:0;
+  z-index:90;
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr) 104px;
+  align-items:start;
+  gap:10px;
+  width:100%;
+  margin:calc(0px - var(--mm-safe-top) - 18px) 0 18px;
+  padding:calc(var(--mm-safe-top) + 18px) 0 calc(10px + max(0px, (var(--mm-safe-top) * .18)));
+  background-color:transparent;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center top;
+  background-attachment:fixed;
+  box-shadow:none;
+}
+body.mm-registro .mm-secondary-header__title{min-width:0;}
+body.mm-registro .mm-app-name-label{
+  display:block;
+  max-width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:10px !important;
+  line-height:14.4px;
+  min-height:14.4px;
+  letter-spacing:.08em !important;
+}
+body.mm-registro .mm-secondary-header h2{
+  margin:4px 0 0;
+  max-width:100%;
+  color:var(--mm-text-primary);
+  font-family:var(--mm-font-display);
+  font-size:28px;
+  line-height:1.12;
+}
+body.mm-registro .mm-secondary-header__action{min-width:0;display:flex;justify-content:flex-end;}
+body.mm-registro .mm-back-button{
+  width:44px;height:44px;min-width:44px;min-height:44px;padding:0;
+  border-radius:50%;border:1px solid var(--mm-border);background:var(--mm-surface-elevated);color:var(--mm-text-primary);
+  display:grid;place-items:center;
+}
+body.mm-registro .mm-header-action{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:104px;min-width:104px;height:52px;min-height:52px;padding:0 14px;
+  border:1px solid rgba(159,198,236,.18);border-radius:16px;
+  background:linear-gradient(180deg,rgba(52,70,94,.80),rgba(27,42,61,.84));
+  color:var(--mm-text-primary);font-family:var(--mm-font-ui);font-size:16px;font-weight:650;line-height:1;white-space:nowrap;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+
+/* Registros / histórico */
+body.mm-registro .record,
+body.mm-registro .record-card,
+body.mm-registro .history-item{
+  border-radius:var(--mm-radius-card-small) !important;
+  border:1px solid var(--mm-border) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.042)) !important;
+  box-shadow:none !important;
+}
+body.mm-registro .results-summary,body.mm-registro .record-meta{color:var(--mm-text-secondary)}
+body.mm-registro .empty-state{color:var(--mm-text-secondary)}
+
+/* Controles especiais que devem continuar visualmente coerentes */
+body.mm-registro .switch-row,
+body.mm-registro .frequency-cutoff-card{
+  border:1px solid var(--mm-border) !important;
+  border-radius:var(--mm-radius-card-small) !important;
+  background:var(--mm-surface) !important;
+  box-shadow:none !important;
+}
+body.mm-registro .choice-button,body.mm-registro .pain-option{
+  border-radius:var(--mm-radius-card-small) !important;
+  border:1px solid var(--mm-border) !important;
+  background:var(--mm-surface) !important;
+  font-family:var(--mm-font-ui) !important;
+}
+body.mm-registro .status-pill{font-family:var(--mm-font-ui) !important}
+
+/* Liquid Glass reservado a navegação e controles flutuantes. */
+body.mm-registro .sheet.glass-heavy{backdrop-filter:blur(28px) saturate(145%) !important;-webkit-backdrop-filter:blur(28px) saturate(145%) !important}
+body.mm-registro .hero-card.glass,body.mm-registro .list-card.glass,body.mm-registro .summary-card.glass,
+body.mm-registro .filter-row.glass,body.mm-registro .chart-card.glass,body.mm-registro .chart-filter-card.glass{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}
+
+/* Responsividade */
+@media(max-width:560px){
+  body.mm-registro h1{font-size:30px}
+  body.mm-registro h2{font-size:21px}
+  body.mm-registro .mm-app-shell{padding-left:calc(14px + var(--mm-safe-left));padding-right:calc(14px + var(--mm-safe-right))}
+  body.mm-registro .mm-tabbar{width:calc(100% - 24px);bottom:calc(var(--mm-safe-bottom) + 8px)}
+  body.mm-registro .settings-row,body.mm-registro .more-menu-list .menu-item{padding:13px 14px !important}
+}
+@media(min-width:900px){
+  body.mm-registro .mm-app-shell{padding-left:calc(20px + var(--mm-safe-left));padding-right:calc(20px + var(--mm-safe-right))}
+}
+@media(prefers-reduced-motion:reduce){
+  body.mm-registro *,body.mm-registro *::before,body.mm-registro *::after{scroll-behavior:auto !important;transition-duration:.01ms !important;animation-duration:.01ms !important;animation-iteration-count:1 !important}
+}
+
+/* Ajustes finais de compatibilidade dos apps atuais */
+body.mm-registro .settings-row> b{display:none !important}
+body.mm-registro .settings-row::after,
+body.mm-registro .more-menu-list .menu-item::after{
+  content:"";
+  width:8px;
+  height:8px;
+  flex:0 0 8px;
+  margin-left:auto;
+  border-top:2px solid var(--mm-text-tertiary);
+  border-right:2px solid var(--mm-text-tertiary);
+  transform:rotate(45deg);
+}
+body.mm-registro--diario .more-panel{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+body.mm-registro--diario .more-heading{padding-inline:4px}
+body.mm-registro .mm-search-icon{width:22px;height:22px;display:grid;place-items:center;color:var(--mm-text-tertiary)}
+body.mm-registro .empty-icon .mm-icon{margin:auto;width:26px;height:26px}
+body.mm-registro .record-saved-icon .mm-icon{width:32px;height:32px;stroke-width:2.2}
+body.mm-registro .quick-icon.mm-leading-icon{width:38px;height:38px;flex-basis:38px;border-radius:14px;background:rgba(255,255,255,.055)}
+
+/* Compatibilidade específica: neutraliza a antiga apresentação em cartões soltos
+   do painel Ferramentas do Desencosta sem tocar na sua estrutura funcional. */
+body.mm-registro [data-mm-view-panel="tools"] .settings-group{
+  display:block !important;
+  gap:0 !important;
+  margin-bottom:24px !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-group h3{
+  margin:0 6px 9px !important;
+  font-family:var(--mm-font-ui) !important;
+  color:var(--mm-text-tertiary) !important;
+  font-size:12px !important;
+  font-weight:650 !important;
+  letter-spacing:.10em !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-row,
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2),
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:last-child,
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2):last-child{
+  min-height:64px !important;
+  padding:13px 15px !important;
+  border:0 !important;
+  border-bottom:1px solid var(--mm-border) !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.045)) !important;
+  box-shadow:none !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2){
+  border-radius:var(--mm-radius-card-small) var(--mm-radius-card-small) 0 0 !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:last-child{
+  border-radius:0 0 var(--mm-radius-card-small) var(--mm-radius-card-small) !important;
+  border-bottom:0 !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2):last-child{
+  border-radius:var(--mm-radius-card-small) !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-row strong{
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  line-height:1.22 !important;
+  font-weight:650 !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-row small{
+  font-family:var(--mm-font-ui) !important;
+  font-size:13px !important;
+  line-height:1.38 !important;
+  color:var(--mm-text-secondary) !important;
+  margin-top:3px !important;
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-row>b{display:none !important}
+body.mm-registro [data-mm-view-panel="tools"] .settings-row::before{display:none !important}
+
+
+/* v1.3 — unified tools shell and close-button standardization */
+body.mm-registro--diario #tabMore .more-screen-body{width:min(var(--mm-content-max),100%);margin-inline:auto}
+body.mm-registro--diario #tabMore .settings-group{margin-bottom:24px}
+body.mm-registro--diario #tabMore .settings-group h3{margin-left:6px !important}
+body.mm-registro .close-icon-btn,
+body.mm-registro .sheet-title-row .close-icon-btn,
+body.mm-registro .export-topbar .close-icon-btn{
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  padding:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  font-size:0 !important;
+  color:var(--mm-text-primary) !important;
+}
+body.mm-registro .close-icon-btn .mm-icon{
+  width:20px;
+  height:20px;
+}
+body.mm-registro .sheet-title-row .close-icon-btn::before,
+body.mm-registro .sheet-title-row .close-icon-btn::after,
+body.mm-registro .export-topbar .close-icon-btn::before,
+body.mm-registro .export-topbar .close-icon-btn::after{
+  inset:auto;
+}
+
+
+/* v1.2 — app-specific home extensions retained below */
+body.mm-registro--dentes .hero-card{
+  background-image:none !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.068),rgba(255,255,255,.048)) !important;
+}
+body.mm-registro--dentes .hero-overlay{
+  background:linear-gradient(180deg,rgba(5,10,18,.02),rgba(5,10,18,.16)) !important;
+}
+body.mm-registro--dentes .status-pill{
+  background:rgba(10,16,27,.44) !important;
+}
+
+
+/* v1.4 — generic manager component for MM Registro */
+body.mm-registro .manager-list{display:grid;gap:10px;margin:12px 0 16px;max-height:390px;overflow:auto;padding-right:2px}
+body.mm-registro .manager-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px 12px;border:1px solid rgba(190,207,235,.15);border-radius:19px;background:rgba(255,255,255,.055)}
+body.mm-registro .manager-weight{width:38px;align-self:start;padding-top:1px;text-align:center;font-family:var(--mm-font-ui);line-height:1;user-select:none;pointer-events:none}
+body.mm-registro .manager-weight strong{display:block;font-size:27px;font-weight:730;color:var(--mm-accent);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+body.mm-registro .manager-weight small{display:block;margin-top:5px;font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:#7f8ca0;font-weight:700}
+body.mm-registro .manager-label-wrap{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:2px 0}
+body.mm-registro .manager-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f7f5f2;font-family:var(--mm-font-display);font-size:19px;font-weight:600;line-height:1.18}
+body.mm-registro .manager-rename{border:0;background:transparent;color:#91a8ca;padding:1px 0;font-family:var(--mm-font-ui);font-size:11px;font-weight:680;line-height:1.3;text-align:left}
+body.mm-registro .manager-rename span{font-size:11px;margin-right:3px}
+body.mm-registro .manager-buttons{display:flex;gap:5px;align-self:center}
+body.mm-registro .mini-button{width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.12);border-radius:11px;background:rgba(255,255,255,.07);color:#dbe4f3;font-size:16px;display:grid;place-items:center}
+body.mm-registro .mini-button:disabled{opacity:.28}
+body.mm-registro .danger-mini{color:#ff9f9f}
+body.mm-registro .manager-help{color:var(--mm-text-secondary);line-height:1.55}
+@media(max-width:520px){
+  body.mm-registro .manager-row{grid-template-columns:34px minmax(0,1fr) auto;gap:10px}
+  body.mm-registro .manager-weight{width:34px}
+  body.mm-registro .manager-weight strong{font-size:25px}
+  body.mm-registro .manager-buttons{gap:4px}
+  body.mm-registro .mini-button{width:33px;height:33px}
+  body.mm-registro .manager-list{max-height:330px}
+}
+
+
+/* v1.8 — protected secondary headers without a visible top block */
+body.mm-registro .full-header{
+  position:sticky !important;
+  top:0 !important;
+  z-index:35 !important;
+  width:calc(100% + 28px) !important;
+  max-width:none !important;
+  margin-left:-14px !important;
+  margin-right:-14px !important;
+  margin-bottom:16px !important;
+  padding-top:calc(var(--mm-safe-top) + 10px) !important;
+  padding-bottom:12px !important;
+  padding-left:calc(18px + var(--mm-safe-left)) !important;
+  padding-right:calc(18px + var(--mm-safe-right)) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(7,17,28,.96) 0%,
+      rgba(8,25,43,.90) 58%,
+      rgba(9,29,50,.56) 82%,
+      rgba(9,29,50,0) 100%) !important;
+  backdrop-filter:blur(18px) saturate(112%) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(112%) !important;
+  box-shadow:none !important;
+}
+body.mm-registro .full-dialog .full-header{
+  width:calc(100% + 36px) !important;
+  margin-left:-18px !important;
+  margin-right:-18px !important;
+}
+body.mm-registro .full-header .back-circle{
+  pointer-events:auto !important;
+  position:relative !important;
+  z-index:2 !important;
+}
+body.mm-registro .full-dialog[open] > .full-panel{
+  padding-top:0 !important;
+  scroll-padding-top:calc(var(--mm-safe-top) + 82px) !important;
+}
+
+/* v1.8 — canonical analytics shared by every MM Registro app */
+body.mm-registro .mm-analysis-sheet{
+  padding-top:0 !important;
+  color:var(--mm-text-primary) !important;
+  background:linear-gradient(180deg,rgba(10,24,39,.985),rgba(7,18,30,.992)) !important;
+  border:1px solid rgba(159,198,236,.18) !important;
+  box-shadow:0 -18px 48px rgba(3,10,18,.28) !important;
+}
+body.mm-registro .mm-analysis-sheet .sheet-handle{
+  width:44px !important;
+  height:5px !important;
+  margin:4px auto 18px !important;
+  border-radius:999px !important;
+  background:#4b6783 !important;
+  opacity:.9;
+}
+body.mm-registro .mm-analysis-sticky-zone{
+  position:sticky;
+  top:0;
+  z-index:16;
+  margin:0 -18px 14px;
+  padding:12px 18px 16px;
+  border-radius:var(--mm-radius-sheet) var(--mm-radius-sheet) 0 0;
+  border-bottom:1px solid rgba(159,198,236,.13);
+  background:rgba(8,20,34,.995);
+  box-shadow:none;
+}
+body.mm-registro .mm-analysis-sticky-zone .mm-analysis-controls{
+  margin-bottom:0 !important;
+}
+body.mm-registro .mm-analysis-sheet .sheet-close{
+  position:absolute !important;
+  top:18px !important;
+  right:18px !important;
+  z-index:20 !important;
+  width:48px !important;
+  height:48px !important;
+  min-width:48px !important;
+  min-height:48px !important;
+  border:1px solid rgba(176,206,238,.22) !important;
+  border-radius:50% !important;
+  background:linear-gradient(180deg,rgba(50,66,87,.86),rgba(22,35,52,.90)) !important;
+  color:#fff !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px rgba(0,0,0,.14) !important;
+}
+body.mm-registro .mm-analysis-heading{
+  padding:0 66px 0 2px !important;
+  margin:0 0 18px !important;
+}
+body.mm-registro .mm-analysis-heading .sheet-kicker{
+  margin:0 0 4px !important;
+  color:var(--mm-text-tertiary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  letter-spacing:.14em !important;
+  text-transform:uppercase !important;
+}
+body.mm-registro .mm-analysis-heading h2{
+  margin:0 !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-display) !important;
+  font-size:28px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.025em !important;
+}
+body.mm-registro .mm-analysis-controls{
+  margin:0 0 12px !important;
+}
+body.mm-registro .analysis-quick-range,
+body.mm-registro .chart-quick-range{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:7px !important;
+  width:100% !important;
+  margin:0 !important;
+}
+body.mm-registro .range-chip{
+  min-width:0 !important;
+  min-height:46px !important;
+  padding:0 5px !important;
+  border:1px solid rgba(140,168,205,.32) !important;
+  border-radius:999px !important;
+  background:rgba(18,38,66,.60) !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  line-height:1 !important;
+  font-weight:650 !important;
+  letter-spacing:-.015em !important;
+  white-space:nowrap !important;
+}
+body.mm-registro .range-chip.is-active{
+  background:linear-gradient(180deg,rgba(70,135,207,.92),rgba(36,83,136,.94)) !important;
+  border-color:rgba(173,211,248,.52) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+body.mm-registro .analysis-period-grid,
+body.mm-registro #chartDialog .analysis-period-grid{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+  margin-top:14px !important;
+}
+body.mm-registro .analysis-period-grid label{
+  display:grid !important;
+  gap:7px !important;
+  min-width:0 !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+}
+body.mm-registro .analysis-period-grid input[type="date"]{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:52px !important;
+  padding:0 12px !important;
+  border:1px solid rgba(159,198,236,.18) !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.052)) !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:600 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+body.mm-registro .analysis-actions{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+  margin:14px 0 0 !important;
+}
+body.mm-registro .analysis-actions > button:not([hidden]){
+  width:100% !important;
+  min-height:50px !important;
+  margin:0 !important;
+}
+body.mm-registro .analysis-summary-grid,
+body.mm-registro .chart-summary{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+  margin:14px 0 !important;
+}
+body.mm-registro .analysis-stat-card,
+body.mm-registro .chart-summary-card{
+  min-width:0 !important;
+  padding:11px 12px 10px !important;
+  border:1px solid rgba(159,198,236,.15) !important;
+  border-radius:17px !important;
+  background:linear-gradient(180deg,rgba(13,31,49,.90),rgba(10,25,41,.84)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+body.mm-registro .analysis-stat-card span,
+body.mm-registro .chart-summary-card span{
+  display:block !important;
+  margin:0 0 5px !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:11px !important;
+  line-height:1.2 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.055em !important;
+}
+body.mm-registro .analysis-stat-card strong,
+body.mm-registro .chart-summary-card strong{
+  display:block !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-display) !important;
+  font-size:19px !important;
+  line-height:1.12 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+body.mm-registro .analysis-stat-card small,
+body.mm-registro .chart-summary-card small{
+  display:block !important;
+  margin-top:4px !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:11px !important;
+  line-height:1.25 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+body.mm-registro #chartDialog .chart-filter-card{
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+body.mm-registro #chartDialog .chart-dashboard-actions{
+  display:block !important;
+  margin:12px 0 0 !important;
+}
+body.mm-registro #chartDialog .chart-dashboard-btn{
+  width:100% !important;
+  min-height:50px !important;
+  height:auto !important;
+  margin:0 !important;
+  border-radius:20px !important;
+  color:var(--mm-accent-contrast) !important;
+  background:linear-gradient(180deg,#9dccff,#68a8e6) !important;
+  border-color:rgba(218,237,255,.62) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+}
+body.mm-registro #chartDialog .chart-range{
+  display:none !important;
+}
+body.mm-registro #chartDialog .chart-card{
+  padding:14px 15px 13px !important;
+  border:1px solid rgba(108,130,168,.24) !important;
+  border-radius:18px !important;
+  background:linear-gradient(180deg,rgba(13,27,48,.96),rgba(9,20,38,.92)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+body.mm-registro #chartDialog .chart-card-head h3{
+  margin:0 0 7px !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:18px !important;
+  line-height:1.18 !important;
+  font-weight:700 !important;
+  letter-spacing:-.01em !important;
+}
+body.mm-registro #chartDialog .chart-card-subtitle,
+body.mm-registro #chartDialog .chart-note{
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:14px !important;
+  line-height:1.4 !important;
+}
+body.mm-registro #chartDialog .chart-export-btn{
+  color:var(--mm-text-primary) !important;
+  background:linear-gradient(180deg,rgba(52,70,94,.80),rgba(27,42,61,.84)) !important;
+  border-color:rgba(159,198,236,.16) !important;
+}
+@media(max-width:430px){
+  body.mm-registro .analysis-quick-range,
+  body.mm-registro .chart-quick-range{gap:5px !important}
+  body.mm-registro .range-chip{font-size:17px !important;padding-inline:2px !important}
+  body.mm-registro .analysis-stat-card strong,
+  body.mm-registro .chart-summary-card strong{font-size:18px !important}
+}
+
+/* v1.8 parity fixes for equivalent Settings rows */
+body.mm-registro [data-mm-view-panel="tools"] .settings-row strong{
+  color:var(--mm-text-primary) !important;
+}
+@media(max-width:430px){
+  body.mm-registro [data-mm-view-panel="tools"] .settings-row{
+    padding:13px 14px !important;
+  }
+}
+@media(max-width:430px){
+  body.mm-registro [data-mm-view-panel="tools"] .settings-row,
+  body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2),
+  body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:last-child,
+  body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2):last-child{
+    padding:13px 14px !important;
+  }
+}
+body.mm-registro [data-mm-view-panel="tools"] .settings-group>.settings-row:nth-child(2):last-child{
+  border-bottom:0 !important;
+}
+
+
+/* v1.9 — root background parity and canonical manager shell */
+html{
+  min-height:100% !important;
+  background:
+    radial-gradient(circle at top left,rgba(87,146,212,.16),transparent 24%),
+    radial-gradient(circle at 82% 0%,rgba(46,114,183,.18),transparent 26%),
+    radial-gradient(circle at 10% 88%,rgba(34,76,122,.14),transparent 28%),
+    linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%) !important;
+  background-attachment:fixed !important;
+}
+body.mm-registro .mm-manager-shell{
+  width:min(620px,calc(100vw - 28px)) !important;
+  max-height:min(760px,calc(100dvh - var(--mm-safe-top) - var(--mm-safe-bottom) - 24px)) !important;
+  border-radius:var(--mm-radius-sheet) !important;
+  border:1px solid var(--mm-border-strong) !important;
+  background:linear-gradient(180deg,rgba(10,24,39,.985),rgba(7,18,30,.992)) !important;
+  box-shadow:0 24px 70px rgba(3,10,18,.34) !important;
+  color:var(--mm-text-primary) !important;
+}
+body.mm-registro .mm-manager-shell .sheet-kicker{
+  color:var(--mm-text-tertiary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  letter-spacing:.14em !important;
+  text-transform:uppercase !important;
+}
+body.mm-registro .mm-manager-shell > h2,
+body.mm-registro .mm-manager-shell .manager-sheet-title{
+  margin:0 0 10px !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-display) !important;
+  font-size:28px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.025em !important;
+}
+body.mm-registro .mm-manager-shell > p,
+body.mm-registro .mm-manager-shell .manager-sheet-copy{
+  margin:0 0 14px !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:15px !important;
+  line-height:1.5 !important;
+}
+body.mm-registro .mm-manager-shell .manager-weight-note{
+  margin:14px 0 2px !important;
+  padding:11px 13px !important;
+  border:1px solid rgba(190,207,235,.12) !important;
+  border-radius:15px !important;
+  background:rgba(120,154,205,.07) !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+}
+body.mm-registro .mm-manager-shell .manager-weight-note strong{color:#e4eaf5 !important;font-weight:700 !important}
+body.mm-registro .mm-manager-shell .manager-add{margin:4px 0 10px !important;width:100% !important;min-height:50px !important}
+body.mm-registro .mm-manager-shell .manager-done{width:100% !important;min-height:50px !important}
+
+
+/* v1.9 — manager shell wins over legacy sheet rules in both implementations */
+body.mm-registro .sheet.mm-manager-shell,
+body.mm-registro .sheet-dialog .sheet.mm-manager-shell{
+  width:min(620px,calc(100vw - 28px)) !important;
+  max-height:min(760px,calc(100dvh - var(--mm-safe-top) - var(--mm-safe-bottom) - 24px)) !important;
+  padding:28px 22px calc(28px + var(--mm-safe-bottom)) !important;
+  border-radius:var(--mm-radius-sheet) !important;
+  border:1px solid var(--mm-border-strong) !important;
+  border-bottom:1px solid var(--mm-border-strong) !important;
+  background:linear-gradient(180deg,rgba(10,24,39,.985),rgba(7,18,30,.992)) !important;
+  box-shadow:0 24px 70px rgba(3,10,18,.34) !important;
+}
+body.mm-registro .sheet-dialog[open] > .sheet.mm-manager-shell,
+body.mm-registro .sheet.mm-manager-shell.open{
+  max-height:min(760px,calc(100dvh - var(--mm-safe-top) - var(--mm-safe-bottom) - 24px)) !important;
+}
+body.mm-registro .sheet.mm-manager-shell .sheet-close,
+body.mm-registro .sheet-dialog .sheet.mm-manager-shell .sheet-close{
+  position:absolute !important;
+  right:17px !important;
+  top:16px !important;
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  min-height:48px !important;
+  z-index:50 !important;
+}
+body.mm-registro .sheet.mm-manager-shell .manager-list,
+body.mm-registro .sheet-dialog .sheet.mm-manager-shell .manager-list{
+  max-height:390px !important;
+}
+@media(max-width:520px){
+  body.mm-registro .sheet.mm-manager-shell,
+  body.mm-registro .sheet-dialog .sheet.mm-manager-shell{
+    padding:26px 18px calc(24px + var(--mm-safe-bottom)) !important;
+  }
+  body.mm-registro .sheet.mm-manager-shell .manager-list,
+  body.mm-registro .sheet-dialog .sheet.mm-manager-shell .manager-list{
+    max-height:330px !important;
+  }
+}
+
+
+/* v1.10 — canonical native dialog shell for editable/reorderable managers */
+body.mm-registro .mm-manager-dialog{
+  border:0 !important;
+  background:transparent !important;
+  padding:calc(var(--mm-safe-top) + 8px) 0 calc(var(--mm-safe-bottom) + 8px) !important;
+  color:var(--mm-text-primary) !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  position:fixed !important;
+  inset:0 !important;
+  margin:0 !important;
+}
+body.mm-registro .mm-manager-dialog[open]{display:grid !important;place-items:center !important}
+body.mm-registro .mm-manager-dialog::backdrop{
+  background:rgba(0,0,0,.54) !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+body.mm-registro .mm-manager-dialog > .mm-manager-shell{
+  position:relative !important;
+  inset:auto !important;
+  margin:0 !important;
+  transform:none !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  min-height:0 !important;
+  overflow:auto !important;
+  padding-bottom:28px !important;
+  border-radius:34px !important;
+}
+
+/* v2.2 — iOS root safe-area uses the same canonical canvas as the app body */
+html{
+  min-height:100% !important;
+  background-color:#07111c !important;
+  background-image:var(--mm-app-background) !important;
+  background-repeat:no-repeat !important;
+  background-size:cover !important;
+  background-attachment:fixed !important;
+}
+
+/* v1.13 — canonical parity guard for MM Registro apps */
+/* All apps load this file after their app-specific stylesheet. The rules below
+   deliberately own the geometry/state of equivalent shared components. */
+body.mm-registro .full-header > div{
+  min-width:0 !important;
+}
+body.mm-registro .full-header h2{
+  max-width:100% !important;
+  line-height:1.12 !important;
+}
+
+/* Analysis is one component across all MM Registro apps. */
+body.mm-registro .range-chip{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  background:rgba(18,38,66,.60) !important;
+  border-color:rgba(140,168,205,.32) !important;
+  box-shadow:none !important;
+  color:var(--mm-text-primary) !important;
+}
+body.mm-registro .range-chip::before{
+  display:none !important;
+  content:none !important;
+}
+body.mm-registro .range-chip.is-active,
+body.mm-registro .range-chip[aria-pressed="true"]{
+  background:linear-gradient(180deg,rgba(70,135,207,.96),rgba(36,83,136,.98)) !important;
+  border-color:rgba(185,220,252,.66) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 5px 14px rgba(0,0,0,.12) !important;
+}
+
+/* MM Registro 2.47: Analysis geometry is owned exclusively by .mm-secondary-layer > .mm-secondary-sheet. */
+
+/* Shared analysis control geometry and summary cards. */
+body.mm-registro .analysis-quick-range,
+body.mm-registro .chart-quick-range{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:7px !important;
+}
+body.mm-registro .range-chip{
+  min-height:46px !important;
+  font-size:17px !important;
+  padding:0 5px !important;
+}
+body.mm-registro .analysis-period-grid,
+body.mm-registro #chartDialog .analysis-period-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+body.mm-registro .analysis-period-grid > label{
+  min-width:0 !important;
+}
+body.mm-registro .analysis-period-grid .date-control,
+body.mm-registro .analysis-period-grid input[type="date"]{
+  min-width:0 !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+body.mm-registro .analysis-summary-grid,
+body.mm-registro .chart-summary{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+
+@media(max-width:430px){
+  body.mm-registro .analysis-quick-range,
+  body.mm-registro .chart-quick-range{gap:5px !important}
+  body.mm-registro .range-chip{font-size:16px !important;padding-inline:2px !important}
+}
+
+/* v1.13 — canonical action button inside secondary headers */
+body.mm-registro .full-header .text-button{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:auto !important;
+  min-width:104px !important;
+  height:52px !important;
+  min-height:52px !important;
+  padding:0 14px !important;
+  border:1px solid rgba(159,198,236,.18) !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg,rgba(52,70,94,.80),rgba(27,42,61,.84)) !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:650 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+/* v1.13.2 — typography parity for equivalent controls */
+body.mm-registro .full-header h2{color:var(--mm-text-primary) !important;}
+body.mm-registro .settings-row small,
+body.mm-registro .menu-item small{font-weight:400 !important;}
+body.mm-registro #chartDialog .chart-dashboard-btn{font-size:17px !important;}
+
+
+/* v1.14 — canonical Analysis date controls, identical across MM Registro apps */
+body.mm-registro .analysis-period-grid > label > span{
+  color:#fff !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  line-height:1.2 !important;
+}
+body.mm-registro .analysis-period-grid input[type="date"]{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-inline-size:0 !important;
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:0 16px !important;
+  overflow:hidden !important;
+  border:1px solid rgba(108,130,168,.32) !important;
+  border-radius:18px !important;
+  background:rgba(17,32,56,.85) !important;
+  color:#f7fbff !important;
+  -webkit-text-fill-color:#f7fbff !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:18px !important;
+  font-weight:600 !important;
+  line-height:56px !important;
+  text-align:left !important;
+  font-variant-numeric:tabular-nums !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+body.mm-registro .analysis-period-grid input[type="date"]::-webkit-date-and-time-value{
+  min-height:56px !important;
+  line-height:56px !important;
+  text-align:left !important;
+}
+body.mm-registro .analysis-period-grid input[type="date"]::-webkit-datetime-edit,
+body.mm-registro .analysis-period-grid input[type="date"]::-webkit-datetime-edit-fields-wrapper{
+  padding:0 !important;
+  min-width:0 !important;
+}
+body.mm-registro .analysis-period-grid input[type="date"]::-webkit-calendar-picker-indicator{
+  margin:0 !important;
+  padding:0 !important;
+}
+@media(max-width:430px){
+  body.mm-registro .analysis-period-grid input[type="date"]{
+    padding-inline:12px !important;
+    font-size:17px !important;
+  }
+}
+
+
+/* v1.14 — canonical parity guard */
+
+
+/* v1.14 — canonical secondary circular controls and Analysis action */
+body.mm-registro .sheet-close,
+body.mm-registro .back-circle{
+  padding:0 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(255,255,255,.04),
+    0 12px 26px rgba(0,0,0,.22) !important;
+}
+body.mm-registro .mm-analysis-sheet .analysis-actions > button:not([hidden]){
+  border:1px solid rgba(255,255,255,.18) !important;
+}
+
+
+/* v1.14 — final Analysis control specificity guard */
+body.mm-registro #analyticsSheet .analysis-period-grid input[type="date"],
+body.mm-registro #chartDialog .analysis-period-grid input[type="date"]{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  min-inline-size:0 !important;
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:0 16px !important;
+  overflow:hidden !important;
+  border:1px solid var(--mm-border) !important;
+  border-radius:var(--mm-radius-field) !important;
+  background:rgba(255,255,255,.055) !important;
+  color:var(--mm-text-primary) !important;
+  -webkit-text-fill-color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  font-weight:600 !important;
+  line-height:56px !important;
+  text-align:left !important;
+  font-variant-numeric:tabular-nums !important;
+}
+body.mm-registro #analyticsSheet .analysis-period-grid > label > span,
+body.mm-registro #chartDialog .analysis-period-grid > label > span{
+  color:#fff !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  line-height:1.2 !important;
+}
+body.mm-registro #analyticsSheet .analysis-actions > button:not([hidden]),
+body.mm-registro #chartDialog .chart-dashboard-btn{
+  border:1px solid rgba(255,255,255,.18) !important;
+}
+@media(max-width:430px){
+  body.mm-registro #analyticsSheet .analysis-period-grid input[type="date"],
+  body.mm-registro #chartDialog .analysis-period-grid input[type="date"]{
+    padding-inline:12px !important;
+    font-size:17px !important;
+  }
+}
+
+
+/* v1.15 — unified history header action + stable multi-select controls */
+body.mm-registro .history-screen-header{
+  align-items:start !important;
+  grid-template-columns:48px minmax(0,1fr) auto !important;
+  gap:10px !important;
+}
+body.mm-registro .history-screen-header #historyExportBtn{
+  align-self:start !important;
+  justify-self:end !important;
+}
+body.mm-registro .filter-dialog .filter-option-item input{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  width:22px !important;
+  min-width:22px !important;
+  height:22px !important;
+  min-height:22px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:2px solid rgba(159,198,236,.72) !important;
+  border-radius:999px !important;
+  background:rgba(3,8,15,.92) !important;
+  box-shadow:none !important;
+  outline:none !important;
+  accent-color:initial !important;
+}
+body.mm-registro .filter-dialog .filter-option-item input:checked{
+  background:radial-gradient(circle at center, rgba(255,255,255,.94) 0 43%, transparent 46%), linear-gradient(180deg, rgba(60,124,202,.96), rgba(32,74,126,.98)) !important;
+  border-color:rgba(185,220,252,.78) !important;
+}
+body.mm-registro .filter-dialog .filter-option-item input:focus,
+body.mm-registro .filter-dialog .filter-option-item input:focus-visible{
+  outline:none !important;
+  box-shadow:none !important;
+}
+body.mm-registro .filter-dialog .filter-option-item{
+  -webkit-tap-highlight-color:transparent;
+}
+
+
+/* v1.16 — canonical full-screen image export preview */
+body.mm-registro .export-preview-panel{
+  min-height:100dvh !important;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom)) !important;
+  background:radial-gradient(circle at top left,rgba(87,146,212,.14),transparent 24%),radial-gradient(circle at 82% 0%,rgba(46,114,183,.16),transparent 26%),linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%) !important;
+}
+body.mm-registro .export-preview-header{
+  width:min(var(--mm-content-max),100%) !important;
+  margin:0 auto 18px !important;
+}
+body.mm-registro .export-preview-content{
+  width:min(var(--mm-content-max),100%);
+  margin:0 auto;
+  padding-bottom:24px;
+}
+body.mm-registro .export-preview-list{
+  padding-bottom:120px !important;
+}
+body.mm-registro .export-preview-actionbar{
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:0 !important;
+  transform:translateX(-50%) !important;
+  z-index:120 !important;
+  width:min(var(--mm-content-max),calc(100vw - 36px)) !important;
+  margin:0 !important;
+  padding:12px 0 calc(12px + env(safe-area-inset-bottom)) !important;
+  background:linear-gradient(180deg,rgba(7,17,28,0),rgba(7,17,28,.94) 28%,rgba(7,17,28,.99) 100%) !important;
+  pointer-events:none;
+}
+body.mm-registro .export-preview-actionbar > button{
+  width:100% !important;
+  pointer-events:auto;
+}
+body.mm-registro--diario .export-sheet{
+  top:0 !important;
+  bottom:0 !important;
+  height:100dvh !important;
+  max-height:none !important;
+  width:100% !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  overflow-y:auto !important;
+  background:transparent !important;
+}
+body.mm-registro--diario .export-sheet .full-panel{
+  padding:calc(env(safe-area-inset-top) + 12px) 18px calc(96px + env(safe-area-inset-bottom)) !important;
+}
+body.mm-registro--diario .export-preview-tools{
+  padding:16px 14px 14px;
+  border:1px solid var(--mm-border) !important;
+  border-radius:22px;
+  background:var(--mm-surface-strong) !important;
+  box-shadow:var(--mm-shadow-inset) !important;
+  margin-bottom:18px;
+}
+body.mm-registro--diario .export-preview-filter-row{
+  margin-top:12px;
+}
+body.mm-registro--diario .export-preview-list .record{
+  background:var(--mm-surface) !important;
+  border-color:var(--mm-border) !important;
+  box-shadow:var(--mm-shadow-inset) !important;
+}
+@media(max-width:520px){
+  body.mm-registro .export-preview-actionbar{
+    width:calc(100vw - 28px) !important;
+  }
+}
+
+
+/* v1.16.1 — export action bar must remain viewport-anchored during scroll */
+body.mm-registro--diario .export-sheet[aria-hidden="true"]{
+  display:none !important;
+}
+body.mm-registro--diario .export-sheet.open{
+  display:block !important;
+  transform:none !important;
+  transition:none !important;
+}
+
+
+/* v1.16.2 — all Diário secondary modal surfaces use MM Registro blue palette */
+body.mm-registro--diario .dialog{
+  background:linear-gradient(rgba(10,24,39,.984),rgba(7,18,30,.992)) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  color:var(--mm-text-primary) !important;
+}
+
+
+/* v1.16.3 — Diário export shell matches full-dialog scroll architecture */
+body.mm-registro--diario .export-sheet.open{
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+body.mm-registro--diario .export-sheet.open > .export-preview-panel{
+  width:100% !important;
+  height:100dvh !important;
+  min-height:0 !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+
+/* v1.16.4 — complete secondary-screen parity refinements */
+body.mm-registro--diario .dialog{
+  background:linear-gradient(rgba(10,24,39,.97),rgba(8,17,28,.984)) !important;
+}
+body.mm-registro .manager-add{
+  min-height:56px !important;
+}
+body.mm-registro .export-preview-list .history-day{
+  width:min(var(--mm-content-max),100%);
+  margin:22px auto 10px;
+  padding:0 4px;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:16px !important;
+  font-weight:720 !important;
+  text-transform:capitalize;
+}
+body.mm-registro .export-preview-list .history-day-card{
+  width:min(var(--mm-content-max),100%);
+  margin:0 auto;
+  overflow:hidden;
+  border:1px solid var(--mm-border) !important;
+  border-radius:24px !important;
+  background:var(--mm-surface) !important;
+  box-shadow:var(--mm-shadow-inset) !important;
+}
+body.mm-registro .export-preview-list .record-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:14px !important;
+  min-height:86px;
+  padding:16px 18px !important;
+  border:0 !important;
+  border-bottom:1px solid var(--mm-border) !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+body.mm-registro .export-preview-list .record-row:last-child{
+  border-bottom:0 !important;
+}
+body.mm-registro .export-preview-list .record-icon{
+  flex:0 0 48px;
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border-radius:16px;
+  background:rgba(123,169,221,.10);
+  color:var(--mm-accent);
+}
+body.mm-registro .export-preview-list .record-icon .mm-icon{
+  width:23px;
+  height:23px;
+}
+body.mm-registro .export-preview-list .record-main{
+  min-width:0;
+  flex:1 1 auto;
+  display:grid;
+  gap:4px;
+}
+body.mm-registro .export-preview-list .record-main strong{
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:18px !important;
+  font-weight:760 !important;
+  line-height:1.2 !important;
+}
+body.mm-registro .export-preview-list .record-main span{
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  line-height:1.3 !important;
+}
+body.mm-registro--diario .export-preview-list .record-main span:not(.undefined){
+  color:#76d6a2 !important;
+}
+body.mm-registro--diario .export-preview-list .record-main span.undefined{
+  color:#f1bd61 !important;
+}
+body.mm-registro .export-preview-list .record-time{
+  flex:0 0 auto;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  line-height:1.3 !important;
+  text-align:right;
+}
+
+
+/* v1.16.5 — exact manager/export geometry parity */
+body.mm-registro .manager-add{
+  height:56px !important;
+}
+body.mm-registro--diario .export-sheet .full-panel{
+  padding-top:0 !important;
+}
+
+
+/* v1.16.6 — Diário export preview parity fixes */
+body.mm-registro--diario .export-sheet{position:fixed !important;inset:0 !important;margin:0 !important;background:radial-gradient(circle at top left,rgba(87,146,212,.14),transparent 24%),radial-gradient(circle at 82% 0%,rgba(46,114,183,.16),transparent 26%),linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%) !important;}
+body.mm-registro--diario .export-sheet .export-preview-panel{background:transparent !important;box-shadow:none !important;}
+body.mm-registro--diario .export-preview-header{grid-template-columns:48px minmax(0,1fr) !important;column-gap:10px !important;}
+body.mm-registro--diario .export-preview-header > span{display:none !important;}
+body.mm-registro--diario .export-preview-header h2{white-space:nowrap !important;font-size:24px !important;line-height:1.08 !important;}
+@media (min-width:390px){body.mm-registro--diario .export-preview-header h2{font-size:26px !important;}}
+body.mm-registro--diario #exportRecordCount{display:none !important;}
+body.mm-registro--diario .export-preview-tools .results-meta{justify-content:flex-start !important;}
+
+
+/* v1.16.7 — Diário export image preview aligned with Check-in dos Dentes */
+body.mm-registro--diario .export-sheet{position:fixed !important;inset:0 !important;overflow:auto !important;background:transparent !important;border-radius:0 !important;padding:0 !important;}
+body.mm-registro--diario .export-sheet .full-panel{padding:calc(env(safe-area-inset-top) + 12px) 18px calc(96px + env(safe-area-inset-bottom)) !important;background:radial-gradient(circle at top left,rgba(87,146,212,.14),transparent 24%),radial-gradient(circle at 82% 0%,rgba(46,114,183,.16),transparent 26%),linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%) !important;box-shadow:none !important;}
+body.mm-registro--diario .export-sheet .export-preview-panel{background:transparent !important;}
+body.mm-registro--diario .export-preview-header{grid-template-columns:48px minmax(0,1fr) auto !important;align-items:center !important;}
+body.mm-registro--diario .export-preview-header h2{white-space:nowrap !important;font-size:26px !important;line-height:1.08 !important;}
+@media(max-width:390px){body.mm-registro--diario .export-preview-header h2{font-size:24px !important;}}
+body.mm-registro--diario .export-preview-list{width:min(var(--mm-content-max),100%) !important;margin:0 auto !important;padding-bottom:120px !important;}
+body.mm-registro--diario .export-preview-list .record-row{background:transparent !important;}
+body.mm-registro--diario .export-preview-list .record-main span.undefined{color:#f2c35d !important;}
+
+/* v1.16.8 — do not reserve History meta-row space when no filters are active */
+body.mm-registro--diario #historyFilterActions[hidden]{
+  display:none !important;
+}
+
+
+
+/* v1.18 — canonical wide history edit dialog */
+body.mm-registro #editDialog > .centered-sheet{
+  width:min(620px,calc(100vw - 28px)) !important;
+  max-width:calc(100vw - 28px) !important;
+}
+@media(max-width:520px){
+  body.mm-registro #editDialog > .centered-sheet{
+    width:calc(100vw - 20px) !important;
+    max-width:calc(100vw - 20px) !important;
+  }
+}
+
+
+/* v1.18 — canonical date-control: only the formatted display is visible; native input remains tappable */
+body.mm-registro .date-control{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+  border:1px solid var(--mm-border) !important;
+  border-radius:15px !important;
+  background:rgba(255,255,255,.07) !important;
+  overflow:hidden !important;
+  color:var(--mm-text-primary) !important;
+  box-sizing:border-box !important;
+}
+body.mm-registro .date-display{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  height:56px !important;
+  padding:0 12px !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  font-weight:500 !important;
+  font-variant-numeric:tabular-nums !important;
+  color:var(--mm-text-primary) !important;
+  line-height:1 !important;
+  pointer-events:none !important;
+  box-sizing:border-box !important;
+}
+body.mm-registro .date-control input[type="date"]{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  width:100% !important;
+  height:56px !important;
+  min-width:0 !important;
+  max-width:none !important;
+  min-height:56px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:15px !important;
+  opacity:.01 !important;
+  appearance:auto !important;
+  -webkit-appearance:auto !important;
+  cursor:pointer !important;
+  z-index:2 !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  caret-color:transparent !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  box-sizing:border-box !important;
+}
+body.mm-registro .date-control input[type="date"]::-webkit-date-and-time-value,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit-text,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit-month-field,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit-day-field,
+body.mm-registro .date-control input[type="date"]::-webkit-datetime-edit-year-field{
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  opacity:0 !important;
+}
+body.mm-registro .date-control input[type="date"]::-webkit-calendar-picker-indicator{
+  opacity:.02 !important;
+  width:100% !important;
+  height:100% !important;
+  margin:0 !important;
+  cursor:pointer !important;
+}
+@media(max-width:520px){
+  body.mm-registro .date-control,
+  body.mm-registro .date-control input[type="date"],
+  body.mm-registro .date-display{
+    height:54px !important;
+    min-height:54px !important;
+    max-height:54px !important;
+  }
+}
+
+
+/* v1.19 — canonical export preview: identical structure and geometry in every MM Registro app */
+body.mm-registro .mm-export-preview-dialog.full-dialog{
+  position:fixed !important;
+  inset:0 !important;
+  display:none;
+  width:100vw !important;
+  height:100dvh !important;
+  max-width:100vw !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  background:transparent !important;
+  color:var(--mm-text-primary) !important;
+  overscroll-behavior:none !important;
+}
+body.mm-registro .mm-export-preview-dialog.full-dialog[open]{display:block !important;}
+body.mm-registro dialog.mm-export-preview-dialog.full-dialog::backdrop{
+  background:rgba(0,0,0,.54) !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+body.mm-registro .mm-export-preview-dialog > .export-preview-panel{
+  box-sizing:border-box !important;
+  width:100% !important;
+  height:100dvh !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:calc(env(safe-area-inset-top) + 12px) 18px calc(env(safe-area-inset-bottom) + 146px) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  scroll-padding-top:calc(env(safe-area-inset-top) + 72px) !important;
+  background:radial-gradient(circle at top left,rgba(87,146,212,.14),transparent 24%),radial-gradient(circle at 82% 0%,rgba(46,114,183,.16),transparent 26%),linear-gradient(180deg,#07111c 0%,#0d2440 34%,#0a1727 100%) !important;
+  color:var(--mm-text-primary) !important;
+  box-shadow:none !important;
+}
+body.mm-registro .mm-export-preview-dialog .full-header{
+  position:relative !important;
+  z-index:35 !important;
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:10px !important;
+  width:min(760px,100%) !important;
+  margin:0 auto 18px !important;
+  padding:0 !important;
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+body.mm-registro .mm-export-preview-dialog .full-header h2{
+  margin:4px 0 0 !important;
+  max-width:100% !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  font-family:var(--mm-font-display) !important;
+  font-size:28px !important;
+  line-height:1.12 !important;
+  color:var(--mm-text-primary) !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters{
+  box-sizing:border-box !important;
+  width:min(760px,100%) !important;
+  margin:0 auto 14px !important;
+  padding:14px !important;
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) 112px !important;
+  gap:12px !important;
+  align-items:start !important;
+  border:1px solid var(--mm-border) !important;
+  border-radius:24px !important;
+  background:var(--mm-surface-strong) !important;
+  box-shadow:var(--mm-shadow-inset) !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters label{
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:grid !important;
+  grid-template-rows:auto 56px !important;
+  row-gap:6px !important;
+  align-items:start !important;
+  color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  line-height:1.2 !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters label > span:first-child{
+  display:block !important;
+  margin:0 0 0 2px !important;
+  padding:0 !important;
+  line-height:1.2 !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control{
+  width:100% !important;
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+  margin:0 !important;
+  border-radius:15px !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-display,
+body.mm-registro .mm-export-preview-dialog .export-preview-filters input[type="date"]{
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .filter-clear{
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:end !important;
+  justify-self:stretch !important;
+  width:auto !important;
+  height:56px !important;
+  min-height:56px !important;
+  margin:22px 0 0 !important;
+  padding:0 16px !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.08) !important;
+  color:#d7e4ff !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:17px !important;
+  font-weight:700 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-list{
+  width:min(760px,100%) !important;
+  margin:0 auto !important;
+  padding-bottom:120px !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-actionbar{
+  position:fixed !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:0 !important;
+  transform:translateX(-50%) !important;
+  z-index:120 !important;
+  box-sizing:border-box !important;
+  width:min(760px,calc(100vw - 36px)) !important;
+  margin:0 !important;
+  padding:12px 0 calc(12px + env(safe-area-inset-bottom)) !important;
+  background:linear-gradient(180deg,rgba(7,17,28,0),rgba(7,17,28,.94) 28%,rgba(7,17,28,.99) 100%) !important;
+  pointer-events:none !important;
+}
+body.mm-registro .mm-export-preview-dialog .export-preview-actionbar > button{
+  width:100% !important;
+  min-height:56px !important;
+  pointer-events:auto !important;
+}
+@media(max-width:620px){
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters{
+    grid-template-columns:1fr 1fr !important;
+  }
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters .filter-clear{
+    grid-column:1/-1 !important;
+    width:100% !important;
+    margin-top:0 !important;
+  }
+}
+@media(max-width:520px){
+  body.mm-registro .mm-export-preview-dialog .full-header h2{font-size:24px !important;}
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters{
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+    padding:14px !important;
+  }
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters label{
+    grid-template-rows:auto 54px !important;
+    row-gap:6px !important;
+  }
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control,
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-display,
+  body.mm-registro .mm-export-preview-dialog .export-preview-filters input[type="date"]{
+    height:54px !important;
+    min-height:54px !important;
+    max-height:54px !important;
+  }
+  body.mm-registro .mm-export-preview-dialog .export-preview-actionbar{
+    width:calc(100vw - 28px) !important;
+  }
+}
+
+
+/* v1.19 — canonical wide record editor */
+body.mm-registro #editDialog.centered-dialog{width:100% !important;max-width:none !important;}
+body.mm-registro #editDialog > .centered-sheet{width:min(620px,calc(100vw - 28px)) !important;max-width:calc(100vw - 28px) !important;box-sizing:border-box !important;}
+@media(max-width:520px){body.mm-registro #editDialog > .centered-sheet{width:calc(100vw - 20px) !important;max-width:calc(100vw - 20px) !important;}}
+
+
+/* v1.19.1 — neutralize app-specific residuals inside canonical export preview */
+body.mm-registro .mm-export-preview-dialog > .export-preview-panel{position:relative !important;}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters label{column-gap:normal !important;}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-display{margin:0 0 0 2px !important;}
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .filter-clear{position:relative !important;}
+
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control{margin:0 0 0 2px !important;width:calc(100% - 2px) !important;}
+
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control{padding:0 !important;}
+
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control{font-weight:600 !important;}
+body.mm-registro .mm-export-preview-dialog .export-preview-actionbar > button{position:relative !important;}
+
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .date-control{line-height:1.2 !important;}
+
+
+/* v1.20 — canonical record editor geometry */
+body.mm-registro dialog.mm-edit-record-dialog.centered-dialog{
+  width:100% !important;
+  max-width:none !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet{
+  width:min(620px,calc(100vw - 28px)) !important;
+  max-width:calc(100vw - 28px) !important;
+  box-sizing:border-box !important;
+  overflow-x:hidden !important;
+  border:1px solid var(--mm-border-strong) !important;
+  border-radius:var(--mm-radius-sheet) !important;
+  box-shadow:var(--mm-shadow-inset),0 18px 42px rgba(0,0,0,.28) !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .date-time-input,
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet select,
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .segmented{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .date-time-input{
+  overflow:hidden !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .segmented{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  gap:8px !important;
+  padding:4px !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .segmented > button{
+  min-width:0 !important;
+  width:100% !important;
+  margin:0 !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .edit-actions{
+  width:100% !important;
+  box-sizing:border-box !important;
+  gap:12px !important;
+}
+@media(max-width:520px){
+  body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet{
+    width:calc(100vw - 20px) !important;
+    max-width:calc(100vw - 20px) !important;
+  }
+}
+
+
+/* v1.21 — export preview shell + record datetime editor hardened against iOS regressions */
+body.mm-registro aside.mm-export-preview-dialog.full-dialog{
+  z-index:80 !important;
+}
+body.mm-registro aside.mm-export-preview-dialog.full-dialog.open{
+  display:block !important;
+}
+body.mm-registro aside.mm-export-preview-dialog.full-dialog[aria-hidden="true"]{
+  display:none !important;
+}
+body.mm-registro aside.mm-export-preview-dialog.full-dialog[aria-hidden="false"]{
+  display:block !important;
+}
+body.mm-registro .mm-export-preview-dialog > .export-preview-panel{
+  padding-top:calc(env(safe-area-inset-top) + 12px) !important;
+  scroll-padding-top:calc(env(safe-area-inset-top) + 72px) !important;
+}
+/* Keep the iPhone Dynamic-Island/status-bar region protected even if WebKit reports a transient zero safe-area while opening the fixed preview. */
+@supports (padding-top:max(0px,1px)){
+  @media (max-width:520px) and (display-mode:standalone){
+    body.mm-registro .mm-export-preview-dialog > .export-preview-panel{
+      padding-top:calc(max(env(safe-area-inset-top), 59px) + 12px) !important;
+      scroll-padding-top:calc(max(env(safe-area-inset-top), 59px) + 72px) !important;
+    }
+  }
+}
+
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .mm-edit-datetime-control{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  height:60px !important;
+  min-height:60px !important;
+  max-height:60px !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  border:1px solid var(--mm-border) !important;
+  border-radius:var(--mm-radius-field) !important;
+  background:rgba(255,255,255,.055) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .mm-edit-datetime-display{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  padding:0 14px !important;
+  overflow:hidden !important;
+  color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-ui) !important;
+  font-size:20px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+  pointer-events:none !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .mm-edit-datetime-control input[type="datetime-local"]{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:inherit !important;
+  background:transparent !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  opacity:0 !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  cursor:pointer !important;
+}
+body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .mm-edit-datetime-control:focus-within{
+  border-color:rgba(141,190,236,.68) !important;
+  box-shadow:0 0 0 4px rgba(68,127,186,.20),inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+@media(max-width:520px){
+  body.mm-registro dialog.mm-edit-record-dialog > .mm-edit-record-sheet .mm-edit-datetime-display{
+    font-size:19px !important;
+    padding-inline:10px !important;
+  }
+}
+
+/* v1.22 — canonical export preview uses the same ASIDE shell and button overflow rules in every app */
+body.mm-registro .mm-export-preview-dialog .export-preview-filters .filter-clear,
+body.mm-registro .mm-export-preview-dialog .export-preview-actionbar > button{
+  overflow:hidden !important;
+}
+
+
+/* v1.23 — canonical fixed export actionbar and top-layer-safe preview contract */
+body.mm-registro .mm-export-preview-dialog .export-preview-actionbar{
+  left:0 !important;
+  right:0 !important;
+  transform:none !important;
+  width:min(760px,calc(100vw - 36px)) !important;
+  max-width:760px !important;
+  margin-inline:auto !important;
+}
+@media(max-width:520px){
+  body.mm-registro .mm-export-preview-dialog .export-preview-actionbar{
+    width:calc(100vw - 28px) !important;
+  }
+}
+
+
+/* MM Registro 2.x — AppShell view-state contract */
+body.mm-registro [data-mm-view-panel][hidden]{display:none !important;}
+body.mm-registro [data-mm-view-panel].is-active{display:block;}
+body.mm-registro [data-mm-view-panel]{min-width:0;}
+body.mm-registro [data-mm-app-shell]{min-width:0;}
+body.mm-registro [data-mm-view="home"],
+body.mm-registro [data-mm-view="history"],
+body.mm-registro [data-mm-view="tools"]{touch-action:manipulation;}
+body.mm-registro [data-mm-view][aria-selected="true"]{color:var(--mm-text-primary);}
+body.mm-registro [data-mm-view-panel="history"] > .full-panel,
+body.mm-registro [data-mm-view-panel="tools"] > .full-panel{
+  min-height:calc(100dvh - var(--mm-safe-top));
+  padding-bottom:calc(var(--mm-tabbar-height) + var(--mm-safe-bottom) + 46px);
+}
+body.mm-registro [data-mm-view-panel="history"] .full-header,
+body.mm-registro [data-mm-view-panel="tools"] .full-header{
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+
+
+/* MM Registro 2.2 — canonical chrome contract
+   Primary navigation components intentionally use only mm-* classes so legacy
+   app CSS cannot override their geometry. */
+body.mm-registro .mm-primary-header,
+body.mm-registro .mm-secondary-header,
+body.mm-registro .mm-tabbar{box-sizing:border-box;}
+
+
+@media(max-width:520px){
+  body.mm-registro .mm-analysis-sticky-zone{
+    margin-left:-14px;
+    margin-right:-14px;
+    padding-left:14px;
+    padding-right:14px;
+  }
+}
+
+/* MM Registro 2.47 — canonical secondary-sheet layer
+   Secondary tasks use a single safe-area-aware bottom-sheet shell. */
+body.mm-registro.mm-secondary-open{overflow:hidden;}
+body.mm-registro .mm-secondary-layer{
+  position:fixed;
+  inset:0;
+  z-index:140;
+  pointer-events:auto;
+  isolation:isolate;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  width:100vw;
+  height:100dvh;
+  margin:0;
+  padding:calc(var(--mm-safe-top) + 8px) 0 0;
+  overflow:hidden;
+  border:0;
+  background:linear-gradient(180deg,rgba(8,20,34,.988) 0,rgba(8,20,34,.952) 150px,rgba(8,20,34,.66) 300px,rgba(8,20,34,.58) 100%);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  overscroll-behavior:none;
+}
+body.mm-registro .mm-secondary-layer.open,
+body.mm-registro .mm-secondary-layer[aria-hidden="false"]{display:flex;}
+body.mm-registro .mm-secondary-layer[aria-hidden="true"]{display:none;}
+body.mm-registro .toast{z-index:180 !important;}
+
+body.mm-registro .mm-secondary-layer > .mm-secondary-sheet{
+  position:relative;
+  left:auto;
+  right:auto;
+  bottom:auto;
+  width:min(760px,100%);
+  max-width:760px;
+  height:calc(100dvh - var(--mm-safe-top) - 8px);
+  max-height:calc(100dvh - var(--mm-safe-top) - 8px);
+  min-height:0;
+  margin:0 auto;
+  padding:8px 18px calc(18px + var(--mm-safe-bottom));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  transform:none;
+  transition:none;
+  border:1px solid rgba(159,198,236,.18);
+  border-bottom:0;
+  border-radius:var(--mm-radius-sheet) var(--mm-radius-sheet) 0 0;
+  background:linear-gradient(180deg,rgba(8,20,34,.995),rgba(7,18,30,.992));
+  color:var(--mm-text-primary);
+  box-shadow:0 -18px 48px rgba(3,10,18,.28);
+  backdrop-filter:blur(24px) saturate(125%);
+  -webkit-backdrop-filter:blur(24px) saturate(125%);
+}
+body.mm-registro .mm-secondary-sheet .sheet-handle{
+  width:44px;
+  height:5px;
+  margin:4px auto 18px;
+  border-radius:999px;
+  background:#4b6783;
+  opacity:.9;
+}
+body.mm-registro .mm-secondary-sheet .sheet-close{
+  position:absolute;
+  top:18px;
+  right:18px;
+  z-index:20;
+  width:48px;
+  height:48px;
+  min-width:48px;
+  min-height:48px;
+  border:1px solid rgba(176,206,238,.22);
+  border-radius:50%;
+  background:linear-gradient(180deg,rgba(50,66,87,.86),rgba(22,35,52,.90));
+  color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px rgba(0,0,0,.14);
+}
+body.mm-registro .mm-secondary-sheet__heading{
+  padding:0 66px 0 2px;
+  margin:0 0 18px;
+}
+body.mm-registro .mm-secondary-sheet__heading .sheet-kicker{
+  margin:0 0 4px;
+}
+body.mm-registro .mm-secondary-sheet__heading h2{
+  margin:0;
+  color:var(--mm-text-primary);
+  font-family:var(--mm-font-display);
+  font-size:28px;
+  line-height:1.08;
+  letter-spacing:-.025em;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters{
+  box-sizing:border-box;
+  width:100%;
+  margin:0 0 14px;
+  padding:16px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr)) 112px;
+  gap:12px;
+  align-items:start;
+  border:1px solid var(--mm-border);
+  border-radius:24px;
+  background:var(--mm-surface);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters label{
+  min-width:0;
+  margin:0;
+  padding:0;
+  display:grid;
+  grid-template-rows:auto 56px;
+  row-gap:6px;
+  color:var(--mm-text-secondary);
+  font-family:var(--mm-font-ui);
+  font-size:13px;
+  font-weight:600;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters label > span:first-child{
+  display:block;
+  margin:0 0 2px 4px;
+  padding:0;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-control,
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-display,
+body.mm-registro .mm-export-preview-sheet .export-preview-filters input[type="date"]{
+  height:56px;
+  min-height:56px;
+  max-height:56px;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-control{
+  width:100%;
+  margin:0;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .filter-clear{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:end;
+  width:100%;
+  height:56px;
+  min-height:56px;
+  margin:24px 0 0;
+  padding:0 16px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  background:rgba(255,255,255,.08);
+  color:#d7e4ff;
+  font-family:var(--mm-font-ui);
+  font-size:17px;
+  font-weight:700;
+}
+body.mm-registro .mm-export-preview-sheet{
+  display:grid;
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
+  gap:0;
+  overflow:hidden;
+  padding-bottom:0;
+}
+body.mm-registro .mm-export-preview-sheet .sheet-handle{
+  grid-row:1;
+}
+body.mm-registro .mm-export-preview-sheet .mm-secondary-sheet__heading{
+  grid-row:2;
+  position:sticky;
+  top:0;
+  z-index:6;
+  margin-bottom:14px;
+  padding-top:2px;
+  background:transparent;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-filters{
+  grid-row:3;
+  margin-bottom:12px;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-list{
+  grid-row:4;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:0 0 16px;
+  overflow:auto;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-actionbar{
+  grid-row:5;
+  position:sticky;
+  left:auto;
+  right:auto;
+  bottom:0;
+  z-index:8;
+  width:auto;
+  max-width:none;
+  margin:0 -18px;
+  padding:12px 18px calc(18px + var(--mm-safe-bottom));
+  transform:none;
+  background:linear-gradient(180deg,rgba(7,18,30,0),rgba(7,18,30,.90) 20%,rgba(7,18,30,.985) 100%);
+  pointer-events:none;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-actionbar > button{
+  width:100%;
+  min-height:56px;
+  pointer-events:auto;
+}
+@media(max-width:620px){
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters{grid-template-columns:1fr 1fr;}
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters .filter-clear{grid-column:1/-1;margin-top:0;}
+}
+@media(max-width:520px){
+  body.mm-registro .mm-secondary-layer > .mm-secondary-sheet{
+    width:100%;
+    max-width:none;
+    height:calc(100dvh - var(--mm-safe-top) - 8px);
+    max-height:calc(100dvh - var(--mm-safe-top) - 8px);
+    padding-left:14px;
+    padding-right:14px;
+  }
+  body.mm-registro .mm-secondary-sheet__heading h2{font-size:26px;}
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters{gap:8px;padding:14px;}
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters label{grid-template-rows:auto 54px;}
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-control,
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-display,
+  body.mm-registro .mm-export-preview-sheet .export-preview-filters input[type="date"]{
+    height:54px;min-height:54px;max-height:54px;
+  }
+  body.mm-registro .mm-export-preview-sheet .export-preview-actionbar{
+    margin-left:-14px;margin-right:-14px;
+    padding-left:14px;padding-right:14px;
+  }
+  body.mm-registro .mm-export-preview-sheet .mm-secondary-sheet__heading{
+    margin-left:-2px;
+  }
+}
+
+
+/* MM Registro 2.47 — canonical always-anchored History chrome
+   Header + filter are anchored from the first rendered frame; only the record list scrolls beneath them. */
+body.mm-registro .mm-history-sticky-zone{
+  position:sticky;
+  top:0;
+  z-index:92;
+  width:100%;
+  margin:calc(0px - var(--mm-safe-top) - 18px) 0 14px;
+  padding:calc(var(--mm-safe-top) + 18px) 0 4px;
+  background:none;
+}
+body.mm-registro .mm-history-sticky-zone > .mm-secondary-header{
+  position:relative;
+  top:auto;
+  z-index:auto;
+  margin:0 0 14px;
+  padding:0 0 calc(10px + max(0px, (var(--mm-safe-top) * .18)));
+  background:none;
+  background-image:none;
+}
+body.mm-registro .mm-history-filter-sticky{
+  position:relative;
+  z-index:1;
+  margin-top:0 !important;
+  margin-bottom:0 !important;
+}
+
+body.mm-registro .mm-history-filter-sticky.filter-row,
+body.mm-registro .mm-history-filter-sticky .filter-row{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+body.mm-registro .mm-history-filter-sticky.filter-row .filter-clear,
+body.mm-registro .mm-history-filter-sticky .filter-clear{
+  grid-column:1 / -1;
+}
+body.mm-registro .mm-history-sticky-zone + .history-screen-body,
+body.mm-registro .mm-history-sticky-zone + .mm-history-scroll-content{
+  margin-top:0;
+}
+
+/* MM Registro 2.47 — Home scroll guard. Reserve space for the fixed tab bar only when real content requires scrolling. */
+body.mm-registro.mm-home-active{padding-bottom:0 !important;}
+body.mm-registro.mm-home-active.mm-home-needs-scroll{padding-bottom:calc(var(--mm-tabbar-height) + var(--mm-safe-bottom) + 34px) !important;}
+body.mm-registro [data-mm-view-panel="home"] .bottom-spacer{display:none !important;height:0 !important;margin:0 !important;padding:0 !important;}
+
+/* MM Registro 2.47 — canonical confirmation dialog */
+body.mm-registro dialog.mm-confirm-dialog{width:min(460px,calc(100vw - 28px)) !important;max-width:460px !important;margin:auto !important;padding:0 !important;overflow:hidden !important;border:1px solid rgba(159,198,236,.18) !important;border-radius:26px !important;background:linear-gradient(180deg,rgba(10,24,39,.995),rgba(7,18,30,.997)) !important;color:var(--mm-text-primary) !important;box-shadow:0 24px 70px rgba(3,10,18,.46) !important;}
+body.mm-registro dialog.mm-confirm-dialog::backdrop{background:rgba(3,10,18,.58) !important;backdrop-filter:blur(6px) !important;-webkit-backdrop-filter:blur(6px) !important;}
+body.mm-registro dialog.mm-confirm-dialog form{padding:22px !important;}
+body.mm-registro dialog.mm-confirm-dialog h2{margin:0 0 8px !important;color:var(--mm-text-primary) !important;font-family:var(--mm-font-display) !important;font-size:28px !important;line-height:1.08 !important;letter-spacing:-.025em !important;}
+body.mm-registro dialog.mm-confirm-dialog p{margin:0 !important;color:var(--mm-text-secondary) !important;font-family:var(--mm-font-ui) !important;font-size:17px !important;line-height:1.45 !important;}
+body.mm-registro dialog.mm-confirm-dialog .dialog-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:10px !important;margin-top:18px !important;}
+body.mm-registro dialog.mm-confirm-dialog .danger-btn{min-height:50px !important;border:1px solid rgba(255,151,142,.30) !important;border-radius:var(--mm-radius-button-large) !important;background:linear-gradient(180deg,#c9554c,#9f332d) !important;color:#fff !important;font-family:var(--mm-font-ui) !important;font-size:17px !important;font-weight:700 !important;}
+@media(max-width:430px){body.mm-registro dialog.mm-confirm-dialog h2{font-size:24px !important;}body.mm-registro dialog.mm-confirm-dialog p{font-size:16px !important;}}
+
+/* MM Registro 2.47 — canonical language selector */
+body.mm-registro dialog.mm-language-dialog{
+  width:min(500px,calc(100vw - 28px)) !important;
+  max-width:500px !important;
+  margin:auto !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  border:1px solid rgba(159,198,236,.18) !important;
+  border-radius:26px !important;
+  background:linear-gradient(180deg,rgba(10,24,39,.995),rgba(7,18,30,.997)) !important;
+  color:var(--mm-text-primary) !important;
+  box-shadow:0 24px 70px rgba(3,10,18,.46) !important;
+}
+body.mm-registro dialog.mm-language-dialog::backdrop{
+  background:rgba(3,10,18,.58) !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+body.mm-registro dialog.mm-language-dialog form{padding:22px !important;}
+body.mm-registro dialog.mm-language-dialog h2{
+  margin:0 0 7px !important;color:var(--mm-text-primary) !important;
+  font-family:var(--mm-font-display) !important;font-size:28px !important;line-height:1.08 !important;
+}
+body.mm-registro dialog.mm-language-dialog .language-dialog-copy{
+  margin:0 0 16px !important;color:var(--mm-text-secondary) !important;
+  font-family:var(--mm-font-ui) !important;font-size:16px !important;line-height:1.4 !important;
+}
+body.mm-registro .language-options{display:grid;gap:8px;}
+body.mm-registro .language-option{
+  box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 28px;align-items:center;gap:12px;
+  width:100%;min-height:64px;margin:0;padding:12px 14px;border:1px solid rgba(159,198,236,.13);
+  border-radius:17px;background:rgba(255,255,255,.045);color:var(--mm-text-primary);text-align:left;
+  font-family:var(--mm-font-ui);appearance:none;-webkit-appearance:none;
+}
+body.mm-registro .language-option.is-active{border-color:rgba(124,185,241,.48);background:rgba(72,129,184,.18);}
+body.mm-registro .language-option span{display:grid;gap:3px;min-width:0;}
+body.mm-registro .language-option strong{font-size:17px;line-height:1.2;font-weight:700;}
+body.mm-registro .language-option small{font-size:13px;line-height:1.25;color:var(--mm-text-secondary);}
+body.mm-registro .language-option b{display:grid;place-items:center;font-size:20px;color:var(--mm-accent);}
+body.mm-registro dialog.mm-language-dialog .dialog-actions.single{
+  display:grid !important;grid-template-columns:1fr !important;gap:10px !important;width:100% !important;margin-top:18px !important;
+}
+body.mm-registro dialog.mm-language-dialog .dialog-actions.single > button{
+  box-sizing:border-box !important;width:100% !important;min-height:50px !important;margin:0 !important;
+  border-radius:var(--mm-radius-button-large) !important;font-family:var(--mm-font-ui) !important;font-size:17px !important;font-weight:700 !important;
+}
+@media(max-width:430px){
+  body.mm-registro dialog.mm-language-dialog h2{font-size:24px !important;}
+  body.mm-registro .language-option{min-height:60px;padding:10px 12px;}
+}
+
+
+/* MM Registro 2.51 — one viewport canvas, no visible History background layer
+   The History wrapper remains only to anchor header + filters. Its scroll shield
+   reproduces the viewport canvas at the exact viewport scale, so there is no
+   second gradient/card and no tonal seam. History is the canonical surface;
+   image-export filters and detail cards follow the same token. */
+html{
+  background-color:#07111c !important;
+  background-image:none !important;
+}
+body.mm-registro{
+  position:relative;
+  isolation:isolate;
+  background-color:transparent !important;
+  background-image:none !important;
+  background-attachment:scroll !important;
+}
+body.mm-registro::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background-color:#07111c;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:100vw 100dvh;
+  background-position:center top;
+}
+body.mm-registro [data-mm-view-panel]{background:transparent !important;}
+
+/* Structural sticky wrapper: never paint a card/surface on the wrapper itself. */
+body.mm-registro .mm-history-sticky-zone{
+  width:100vw !important;
+  margin-left:calc(50% - 50vw) !important;
+  margin-right:calc(50% - 50vw) !important;
+  background:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  isolation:isolate;
+}
+/* Scroll shield aligned to the same viewport-sized canvas as body::before.
+   No background-attachment:fixed: WKWebView can scale/repaint that as a box. */
+body.mm-registro .mm-history-sticky-zone::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 50%;
+  width:100vw;
+  z-index:-1;
+  transform:translateX(-50%);
+  pointer-events:none;
+  background-color:#07111c;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:100vw 100dvh;
+  background-position:center top;
+}
+body.mm-registro .mm-history-sticky-zone > .mm-secondary-header,
+body.mm-registro .mm-history-sticky-zone > .mm-history-filter-sticky{
+  width:min(var(--mm-content-max),calc(100vw - 2 * var(--mm-space-4))) !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+
+/* History cards keep their canonical appearance. Filters and export preview
+   follow that surface instead of defining a competing darker surface. */
+body.mm-registro .mm-history-filter-sticky,
+body.mm-registro .mm-export-preview-sheet .export-preview-filters,
+body.mm-registro--diario .export-preview-tools,
+body.mm-registro .export-preview-list .history-day-card,
+body.mm-registro .export-preview-list .record,
+body.mm-registro .export-preview-list .record-card,
+body.mm-registro .export-preview-list .history-item{
+  border-color:var(--mm-history-border) !important;
+  background:var(--mm-history-surface) !important;
+  box-shadow:var(--mm-shadow-inset) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro .mm-history-filter-sticky{
+  padding:16px !important;
+  border:1px solid var(--mm-history-border) !important;
+  border-radius:24px !important;
+}
+body.mm-registro .mm-history-filter-sticky .search-wrap,
+body.mm-registro .mm-history-filter-sticky .filter-select-btn,
+body.mm-registro .mm-history-filter-sticky .date-control,
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .date-control{
+  border-color:var(--mm-border) !important;
+  background:rgba(255,255,255,.055) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+body.mm-registro .mm-history-filter-sticky .filter-clear,
+body.mm-registro .mm-history-filter-sticky .clear-filters-btn,
+body.mm-registro .mm-export-preview-sheet .export-preview-filters .filter-clear{
+  border-color:rgba(255,255,255,.14) !important;
+  background:rgba(255,255,255,.08) !important;
+  color:#d7e4ff !important;
+}
+
+
+/* MM Registro 2.52 — export preview uses the canonical History canvas
+   Export Preview must not darken the shared blue palette with an extra gray layer.
+   The layer reuses the same viewport canvas and the sheet becomes structural. */
+body.mm-registro .mm-secondary-layer.mm-export-preview-layer{
+  background-color:#07111c !important;
+  background-image:var(--mm-app-background) !important;
+  background-repeat:no-repeat !important;
+  background-size:100vw 100dvh !important;
+  background-position:center top !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro .mm-secondary-layer.mm-export-preview-layer > .mm-secondary-sheet.mm-export-preview-sheet{
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.mm-registro .mm-export-preview-sheet .export-preview-actionbar{
+  background:linear-gradient(180deg,rgba(7,17,28,0),rgba(10,31,50,.92) 28%,rgba(7,20,34,.98) 100%) !important;
+}
+
+/* MM Registro 2.66 — top-level secondary headers share the History viewport canvas.
+   Cover both supported AppShell structures: a header directly under the view panel
+   (Diário) or directly under its mm-view-content wrapper (Dentes/Starter).
+   Keep the header geometry centered on the canonical chrome gutter and paint only
+   a viewport-aligned scroll shield. This avoids a second gradient rectangle in
+   Ferramentas and keeps its back button aligned with Histórico at every width. */
+body.mm-registro [data-mm-view-panel] > .mm-secondary-header,
+body.mm-registro [data-mm-view-panel] > .mm-view-content > .mm-secondary-header{
+  width:min(var(--mm-content-max),calc(100vw - 2 * var(--mm-space-4))) !important;
+  margin-left:50% !important;
+  margin-right:0 !important;
+  transform:translateX(-50%);
+  background:none !important;
+  background-image:none !important;
+  background-attachment:scroll !important;
+  box-shadow:none !important;
+  isolation:isolate;
+}
+body.mm-registro [data-mm-view-panel] > .mm-secondary-header::before,
+body.mm-registro [data-mm-view-panel] > .mm-view-content > .mm-secondary-header::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 50%;
+  width:100vw;
+  z-index:-1;
+  transform:translateX(-50%);
+  pointer-events:none;
+  background-color:#07111c;
+  background-image:var(--mm-app-background);
+  background-repeat:no-repeat;
+  background-size:100vw 100dvh;
+  background-position:center top;
+}

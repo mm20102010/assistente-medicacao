@@ -1,0 +1,34 @@
+{
+  "sourceLanguage" : "pt",
+  "strings" : {
+    "complication.icon.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant. Tap to open the app." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente de Medicación. Toca para abrir la app." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente de Medicação. Toque para abrir o app." } }
+      }
+    },
+    "complication.icon.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant icon. Tap to open the app." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Icono del Asistente de Medicación. Toca para abrir la app." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Ícone do Assistente de Medicação. Toque para abrir o app." } }
+      }
+    },
+    "complication.icon.inline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Diary" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente" } }
+      }
+    },
+    "complication.icon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant · Icon" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente · Icono" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente · Ícone" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

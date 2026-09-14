@@ -1,0 +1,372 @@
+name: Restore Stable - Diario
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "updates/restore-*.json"
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  restore-stable:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find restore request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REQUEST_FILE="$(find updates -maxdepth 1 -type f -name 'restore-*.json' | sort | tail -n 1 || true)"
+
+          if [ -z "$REQUEST_FILE" ]; then
+            echo "No restore request found."
+            echo "has_request=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          python3 - "$REQUEST_FILE" "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+
+          path = sys.argv[1]
+          output = sys.argv[2]
+
+          with open(path, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          required = [
+              "current_sha",
+              "current_version",
+              "stable_sha",
+              "stable_version",
+          ]
+
+          missing = [key for key in required if not data.get(key)]
+          if missing:
+              raise SystemExit("Missing request fields: " + ", ".join(missing))
+
+          with open(output, "a", encoding="utf-8") as f:
+              f.write("has_request=true\n")
+              f.write(f"request_file={path}\n")
+              for key in required:
+                  value = str(data[key]).replace("\n", " ")
+                  f.write(f"{key}={value}\n")
+          PY
+
+      - name: Validate Stable
+        id: guard
+        if: steps.request.outputs.has_request == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT_SHA="${{ steps.request.outputs.current_sha }}"
+          STABLE_SHA="${{ steps.request.outputs.stable_sha }}"
+
+          PARENT_SHA="$(git rev-parse HEAD^)"
+
+          if [ "$PARENT_SHA" != "$CURRENT_SHA" ]; then
+            echo "blocked=true" >> "$GITHUB_OUTPUT"
+            echo "reason=main changed after restore request" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          git fetch origin stable
+
+          REMOTE_STABLE_SHA="$(git rev-parse refs/remotes/origin/stable)"
+
+          if [ "$REMOTE_STABLE_SHA" != "$STABLE_SHA" ]; then
+            echo "blocked=true" >> "$GITHUB_OUTPUT"
+            echo "reason=Stable changed after restore request" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "blocked=false" >> "$GITHUB_OUTPUT"
+
+      - name: Restore public from Stable
+        id: changes
+        if: steps.request.outputs.has_request == 'true' && steps.guard.outputs.blocked == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STABLE_SHA="${{ steps.request.outputs.stable_sha }}"
+
+          rm -rf /tmp/diario-stable
+          mkdir -p /tmp/diario-stable
+
+          git archive "$STABLE_SHA" public | tar -x -C /tmp/diario-stable
+
+          rm -rf public
+          mkdir -p public
+          cp -a /tmp/diario-stable/public/. public/
+
+          git add -A -- public
+
+          if git diff --cached --quiet -- public; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect restored version
+        id: version
+        if: steps.request.outputs.has_request == 'true' && steps.guard.outputs.blocked == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path("public/app.js").read_text(encoding="utf-8", errors="replace")
+          match = re.search(r"\bAPP_VERSION\s*=\s*['\"]([^'\"]+)['\"]", text)
+          print(match.group(1).strip() if match else "não identificada")
+          PY
+          )"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Run protected repository gate
+        if: steps.changes.outputs.changed == 'true'
+        run: node .github/scripts/protected-repo-gate.mjs
+
+      - name: Run current web restore gate
+        id: tests
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run web:restore-gate
+
+      - name: Commit restored Stable
+        if: steps.request.outputs.has_request == 'true' && steps.guard.outputs.blocked == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REQUEST_FILE="${{ steps.request.outputs.request_file }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          rm -f "$REQUEST_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "Restore Diario Stable ${VERSION}"
+          git push origin main
+
+      - name: Deploy Diario to Cloudflare Pages
+        id: deploy
+        if: steps.changes.outputs.changed == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.114.0"
+          command: pages deploy public --project-name=diario-medicacao --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup failed restore request
+        if: failure() && steps.request.outputs.has_request == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REQUEST_FILE="${{ steps.request.outputs.request_file }}"
+
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd
+
+          if [ -f "$REQUEST_FILE" ]; then
+            rm -f "$REQUEST_FILE"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A -- updates
+
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+
+          git commit -m "Remove failed Diario Stable restore request"
+          git push origin main
+
+      - name: Restore summary
+        if: always() && steps.request.outputs.has_request == 'true'
+        shell: bash
+        env:
+          CURRENT_VERSION: ${{ steps.request.outputs.current_version }}
+          STABLE_VERSION: ${{ steps.request.outputs.stable_version }}
+          RESTORED_VERSION: ${{ steps.version.outputs.version }}
+          CHANGED: ${{ steps.changes.outputs.changed }}
+          TESTS: ${{ steps.tests.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          BLOCKED: ${{ steps.guard.outputs.blocked }}
+          BLOCK_REASON: ${{ steps.guard.outputs.reason }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅ Concluído" ;;
+              failure) echo "❌ Falhou" ;;
+              skipped) echo "⏭️ Não necessário" ;;
+              cancelled) echo "⚠️ Cancelado" ;;
+              *) echo "— Não executado" ;;
+            esac
+          }
+
+          {
+            if [ "$BLOCKED" = "true" ]; then
+              echo "# ⛔ Restauração do Diário bloqueada"
+            elif [ "$JOB_STATUS" = "success" ]; then
+              echo "# ↩️ Diário restaurado para Stable ${RESTORED_VERSION:-$STABLE_VERSION}"
+            else
+              echo "# ❌ Falha ao restaurar Stable do Diário"
+            fi
+
+            echo
+            echo "- **Versão anterior:** ${CURRENT_VERSION}"
+            echo "- **Stable:** ${STABLE_VERSION}"
+            echo "- **Alteração aplicada:** ${CHANGED:-não determinada}"
+            if [ -n "$BLOCK_REASON" ]; then
+              echo "- **Motivo do bloqueio:** ${BLOCK_REASON}"
+            fi
+            echo
+            echo "| Etapa | Resultado |"
+            echo "|---|---|"
+            echo "| Gate web de restauração | $(status_icon "$TESTS") |"
+            echo "| Deploy Cloudflare Pages | $(status_icon "$DEPLOY") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Send restore email
+        if: always() && steps.request.outputs.has_request == 'true'
+        continue-on-error: true
+        shell: bash
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          CURRENT_VERSION: ${{ steps.request.outputs.current_version }}
+          STABLE_VERSION: ${{ steps.request.outputs.stable_version }}
+          RESTORED_VERSION: ${{ steps.version.outputs.version }}
+          TESTS: ${{ steps.tests.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          BLOCKED: ${{ steps.guard.outputs.blocked }}
+          BLOCK_REASON: ${{ steps.guard.outputs.reason }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python3 - <<'PY'
+          import html
+          import os
+          import re
+          import smtplib
+          import ssl
+          from email.message import EmailMessage
+          from email.utils import formataddr
+
+          user = os.environ["GMAIL_USER"].strip()
+          password = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
+          recipients = [
+              x.strip()
+              for x in re.split(r"[,;]", os.environ["NOTIFY_EMAIL"])
+              if x.strip()
+          ]
+
+          current = os.environ.get("CURRENT_VERSION", "não identificada")
+          stable = os.environ.get("STABLE_VERSION", "não identificada")
+          restored = os.environ.get("RESTORED_VERSION", "").strip() or stable
+          tests = os.environ.get("TESTS", "")
+          deploy = os.environ.get("DEPLOY", "")
+          blocked = os.environ.get("BLOCKED", "")
+          reason = os.environ.get("BLOCK_REASON", "")
+          status = os.environ.get("JOB_STATUS", "")
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          run_url = (
+              f'{os.environ.get("GITHUB_SERVER_URL", "https://github.com")}/'
+              f'{repo}/actions/runs/{os.environ.get("GITHUB_RUN_ID", "")}'
+          )
+
+          def step(value):
+              return {
+                  "success": "✅ Concluído",
+                  "failure": "❌ Falhou",
+                  "skipped": "⏭️ Não necessário",
+                  "cancelled": "⚠️ Cancelado",
+              }.get(value, "— Não executado")
+
+          if blocked == "true":
+              subject = f"⛔ Diário {stable} — restauração bloqueada"
+              title = "Restauração do Diário bloqueada"
+              result = "Nenhuma versão foi restaurada."
+          elif status == "success":
+              subject = f"↩️ Diário {restored} — Stable restaurada"
+              title = f"Diário restaurado para Stable {restored}"
+              result = f"A Stable {restored} foi validada e publicada."
+          else:
+              subject = f"❌ Diário {stable} — falha ao restaurar Stable"
+              title = "Falha ao restaurar Stable do Diário"
+              result = "A restauração não foi concluída."
+
+          rows = [
+              ("Versão anterior", current),
+              ("Stable", stable),
+              ("Gate web de restauração", step(tests)),
+              ("Deploy", step(deploy)),
+          ]
+          if reason:
+              rows.append(("Motivo", reason))
+
+          plain = title + "\n\n" + "\n".join(f"{k}: {v}" for k, v in rows)
+          plain += "\n\n" + result + "\n\n" + run_url
+
+          table = "".join(
+              f'<tr><td style="padding:8px 0;color:#6e6e73;">{html.escape(k)}</td>'
+              f'<td style="padding:8px 0;text-align:right;font-weight:600;">{html.escape(v)}</td></tr>'
+              for k, v in rows
+          )
+
+          body = f"""<!doctype html><html lang="pt-BR"><body style="margin:0;padding:24px;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1d1d1f;"><div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e5e7;border-radius:18px;padding:28px;"><div style="font-size:24px;font-weight:700;margin-bottom:22px;">{html.escape(title)}</div><table style="width:100%;border-collapse:collapse;font-size:15px;">{table}</table><div style="margin:22px 0;padding:16px;border-radius:12px;background:#f5f5f7;line-height:1.5;">{html.escape(result)}</div><a href="{html.escape(run_url)}" style="display:inline-block;background:#1d1d1f;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;">Abrir execução completa</a><div style="margin-top:24px;color:#86868b;font-size:12px;">MM Deploy</div></div></body></html>"""
+
+          msg = EmailMessage()
+          msg["Subject"] = subject
+          msg["From"] = formataddr(("MM Deploy", user))
+          msg["To"] = ", ".join(recipients)
+          msg.set_content(plain)
+          msg.add_alternative(body, subtype="html")
+
+          with smtplib.SMTP_SSL(
+              "smtp.gmail.com",
+              465,
+              context=ssl.create_default_context()
+          ) as smtp:
+              smtp.login(user, password)
+              smtp.send_message(msg, from_addr=user, to_addrs=recipients)
+          PY

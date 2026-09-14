@@ -1,0 +1,231 @@
+name: Apply ZIP Update - Diario
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "updates/*.zip"
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  apply-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find ZIP file
+        id: find_zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="$(find updates -maxdepth 1 -type f -name '*.zip' | sort | tail -n 1 || true)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No ZIP file found in updates/. Nothing to process."
+            echo "has_zip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_zip=true" >> "$GITHUB_OUTPUT"
+          echo "zip_file=$ZIP_FILE" >> "$GITHUB_OUTPUT"
+          echo "Using ZIP: $ZIP_FILE"
+
+      - name: Validate complete ZIP structure
+        if: steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="${{ steps.find_zip.outputs.zip_file }}"
+          rm -rf /tmp/diario-update
+          mkdir -p /tmp/diario-update
+
+          if unzip -Z1 "$ZIP_FILE" | grep -E '(^/|(^|/)\.\.(/|$))'; then
+            echo "Unsafe path detected inside ZIP."
+            exit 1
+          fi
+          unzip -q "$ZIP_FILE" -d /tmp/diario-update
+          find /tmp/diario-update -type d -name "__MACOSX" -prune -exec rm -rf {} +
+          find /tmp/diario-update -type f -name ".DS_Store" -delete
+          if find /tmp/diario-update -type l -print | grep -q .; then
+            echo "ZIP contains symbolic links, which are not accepted."
+            exit 1
+          fi
+
+          ROOT="/tmp/diario-update"
+          ITEM_COUNT="$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
+          DIR_COUNT="$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+          if [ "$ITEM_COUNT" = "1" ] && [ "$DIR_COUNT" = "1" ]; then
+            ROOT="$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          fi
+
+          REQUIRED_FILES=(
+            "package.json"
+            "package-lock.json"
+            "capacitor.config.ts"
+            "public/index.html"
+            "public/app.js"
+            "ios/App/App.xcodeproj/project.pbxproj"
+            "scripts/validate-pwa.mjs"
+            "scripts/validate-release.mjs"
+            "scripts/native-validate.mjs"
+          )
+          for FILE in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$ROOT/$FILE" ]; then
+              echo "Required file missing: $FILE"
+              exit 1
+            fi
+          done
+
+          FORBIDDEN="$(find "$ROOT" \( -name '.env' -o -name '.env.*' -o -name 'node_modules' -o -name 'native-web' -o -name '.git' \) -print)"
+          if [ -n "$FORBIDDEN" ]; then
+            echo "ZIP contains forbidden files or directories:"
+            echo "$FORBIDDEN"
+            exit 1
+          fi
+          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
+
+      - name: Preserve protected infrastructure
+        if: steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/diario-protected
+          mkdir -p /tmp/diario-protected
+          cp -R .github /tmp/diario-protected/github
+
+      - name: Sync complete project from ZIP
+        if: steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            ! -name 'updates' \
+            -exec rm -rf {} +
+          cp -R "$ROOT"/. .
+          rm -rf .github
+          cp -R /tmp/diario-protected/github .github
+          rm -rf updates
+          mkdir -p updates
+          echo keep > updates/.gitkeep
+
+      - name: Setup Node.js
+        if: steps.find_zip.outputs.has_zip == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Run protected repository gate
+        if: steps.find_zip.outputs.has_zip == 'true'
+        run: node .github/scripts/protected-repo-gate.mjs
+
+      - name: Install dependencies
+        if: steps.find_zip.outputs.has_zip == 'true'
+        run: npm ci
+
+      - name: Validate resulting project
+        id: tests
+        if: steps.find_zip.outputs.has_zip == 'true'
+        run: npm run repo:gate
+
+      - name: Validate release tree
+        if: steps.find_zip.outputs.has_zip == 'true'
+        run: npm run validate:artifact -- "$ROOT"
+
+      - name: Detect app version
+        id: version
+        if: steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected app version: $VERSION"
+
+      - name: Detect changes
+        if: steps.find_zip.outputs.has_zip == 'true'
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet -- . ':(exclude)updates/**'; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit updated repository and remove ZIP
+        if: steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="${{ steps.find_zip.outputs.zip_file }}"
+          rm -f "$ZIP_FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "Apply Diario ${{ steps.version.outputs.version }} ZIP update"
+          git push origin main
+
+      - name: Deploy Diario to Cloudflare Pages
+        id: deploy
+        if: steps.changes.outputs.changed == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.114.0"
+          command: pages deploy public --project-name=diario-medicacao --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup failed ZIP
+        if: failure() && steps.find_zip.outputs.has_zip == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="${{ steps.find_zip.outputs.zip_file }}"
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd
+          rm -f "$ZIP_FILE" || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- updates
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Remove failed Diario ZIP update"
+          git push origin main
+
+      - name: Deployment summary
+        if: always()
+        shell: bash
+        env:
+          HAS_ZIP: ${{ steps.find_zip.outputs.has_zip }}
+          CHANGED: ${{ steps.changes.outputs.changed }}
+          TESTS: ${{ steps.tests.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          VERSION: ${{ steps.version.outputs.version }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "# Diário ZIP update"
+            echo
+            echo "- Status: $JOB_STATUS"
+            echo "- ZIP encontrado: ${HAS_ZIP:-false}"
+            echo "- Alterações: ${CHANGED:-false}"
+            echo "- Gate: ${TESTS:-not-run}"
+            echo "- Deploy: ${DEPLOY:-not-run}"
+            echo "- Versão: ${VERSION:-n/a}"
+          } >> "$GITHUB_STEP_SUMMARY"

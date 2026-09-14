@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#07111c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Assistente">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="color-scheme" content="dark">
+  <link rel="manifest" href="manifest.webmanifest?v=1.0">
+  <link rel="apple-touch-icon" href="icons/icon-180.png?v=1.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=1.0">
+  <link rel="stylesheet" href="styles.css?v=1.0">
+  <link rel="stylesheet" href="mm-registro.css?v=4.0">
+  <title>Assistente de Medicação</title>
+</head>
+<body class="mm-registro mm-registro--assistente" data-mm-generation="2" data-mm-app-name="Assistente de Medicação">
+
+  <main class="mm-app-shell" id="appShell" data-mm-app-shell data-mm-active-view="home" data-active-tab="register">
+    <section id="tabRegister" class="tab-panel mm-view-panel is-active" data-tab-panel="register" data-mm-view-panel="home" aria-label="Registrar medicação">
+      <header class="mm-primary-header mm-app-header">
+              <div class="mm-primary-header__inner">
+                <div class="mm-primary-header__title">
+                  <div class="eyebrow">DIÁRIO PESSOAL</div>
+                  <h1>Assistente de Medicação</h1>
+                  <div class="mm-primary-header__status"><p id="statusLine">Carregando…</p></div>
+                </div>
+                <button id="menuBtn" class="mm-icon-button liquid-button" type="button" aria-label="Ferramentas" data-mm-go-view="tools">
+                  <svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#tools"></use></svg>
+                </button>
+              </div>
+            </header>
+      <div class="tab-panel__register-wrap">
+        <section class="assistente-home-actions" aria-label="Ações rápidas">
+          <button id="homeScheduleBtn" class="primary-btn" type="button">Agendar medicamento</button>
+          <button id="homeMedicinesBtn" class="secondary-btn" type="button">Gerenciar remédios</button>
+        </section>
+        <section class="panel new-entry mm-card">
+          <div class="section-heading">
+            <h2>Novo registro</h2>
+            <button id="nowBtn" class="text-btn" type="button">Agora</button>
+          </div>
+
+          <div class="form-grid">
+            <label class="datetime-field">
+              <span>Data e hora</span>
+              <span class="datetime-control">
+                <span id="entryDateTimeDisplay" class="datetime-display" aria-hidden="true"></span>
+                <input id="entryDateTime" type="datetime-local" autocomplete="off" step="60" aria-label="Data e hora do novo registro">
+              </span>
+            </label>
+            <label class="medicine-field">
+              <span>Remédio</span>
+              <select id="entryMedicine"></select>
+            </label>
+            <button id="addBtn" class="primary-btn add-btn" type="button">Registrar</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="tabHistory" class="tab-panel mm-view-panel" data-tab-panel="history" data-mm-view-panel="history" hidden aria-label="Histórico de registros">
+      <div class="mm-history-sticky-zone">
+        <header class="mm-secondary-header">
+          <button id="historyBackBtn" class="mm-back-button liquid-button" type="button" aria-label="Voltar" data-mm-go-view="home"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
+          <div class="mm-secondary-header__title"><div class="eyebrow mm-app-name-label" data-mm-app-name-label></div><h2>Histórico</h2></div>
+          <div class="mm-secondary-header__action"><button id="historyExportBtn" class="mm-header-action liquid-button" type="button"><span>Exportar</span></button></div>
+        </header>
+
+        <section class="history-tools mm-history-filter-sticky">
+          <div class="history-search-row">
+            <div class="search-wrap">
+              <span class="mm-search-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#search"></use></svg></span>
+              <input id="searchInput" type="search" placeholder="Buscar data, remédio ou alívio" autocomplete="off">
+            </div>
+          </div>
+          <div class="filter-row" aria-label="Filtros do histórico">
+            <label class="filter-field">
+              <span>Data</span>
+              <button id="dateFilterBtn" class="filter-select-btn" type="button" aria-label="Filtrar por uma ou mais datas">Todas as datas</button>
+            </label>
+            <label class="filter-field">
+              <span>Remédio</span>
+              <button id="medicineFilterBtn" class="filter-select-btn" type="button" aria-label="Filtrar por um ou mais remédios">Todos os remédios</button>
+            </label>
+          </div>
+          <div id="historyFilterActions" class="results-meta" hidden>
+            <button id="clearFiltersBtn" class="clear-filters-btn" type="button">Limpar filtros</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="history-screen-body">
+        <section id="records" class="records" aria-live="polite"></section>
+
+        <section id="emptyState" class="panel empty-state mm-card" hidden>
+          <div class="empty-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#plus"></use></svg></div>
+          <h2>Nenhum registro</h2>
+          <p>Use o formulário acima para adicionar o primeiro item ou importe seu histórico atual pelo menu.</p>
+        </section>
+      </section>
+    </section>
+
+    <section id="tabSchedules" class="tab-panel mm-view-panel" data-tab-panel="schedules" data-mm-view-panel="schedules" hidden aria-label="Agendamentos">
+      <header class="mm-secondary-header">
+        <button class="mm-back-button liquid-button" type="button" aria-label="Voltar" data-mm-go-view="home"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
+        <div class="mm-secondary-header__title"><div class="eyebrow mm-app-name-label" data-mm-app-name-label></div><h2>Agendamentos</h2></div>
+        <div class="mm-secondary-header__action"><button id="newScheduleBtn" class="mm-header-action liquid-button" type="button"><span>Novo</span></button></div>
+      </header>
+      <section class="more-screen-body assistente-schedules-body">
+        <div class="search-wrap"><span class="mm-search-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#search"></use></svg></span><input id="scheduleSearchInput" type="search" placeholder="Buscar remédio" autocomplete="off"></div>
+        <section id="schedulesList" class="assistente-schedules-list" aria-live="polite"></section>
+      </section>
+    </section>
+
+    <section id="tabMore" class="tab-panel mm-view-panel" data-tab-panel="more" data-mm-view-panel="tools" hidden aria-label="Ferramentas do aplicativo">
+      <header class="mm-secondary-header">
+        <button id="moreBackBtn" class="mm-back-button liquid-button" type="button" aria-label="Voltar" data-mm-go-view="home"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
+        <div class="mm-secondary-header__title"><div class="eyebrow mm-app-name-label" data-mm-app-name-label></div><h2>Ferramentas</h2></div>
+        <div class="mm-secondary-header__action"></div>
+      </header>
+
+      <section class="more-screen-body">
+        <section class="settings-group">
+          <h3>Registro</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" type="button" data-more-action="medicines"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#medicine"></use></svg></span><div><strong>Gerenciar remédios</strong><small>Adicionar, reordenar, renomear ou excluir</small></div></button>
+            <button class="menu-item" type="button" data-more-action="schedule"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#history"></use></svg></span><div><strong>Agendamento</strong><small>Criar ou alterar medicamentos recorrentes</small></div></button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <h3>Lembretes</h3>
+          <div class="menu-list more-menu-list">
+            <label class="menu-item assistente-toggle-row"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#history"></use></svg></span><div><strong>Ativar lembretes</strong><small>Receber avisos nos horários programados</small></div><input id="remindersToggle" type="checkbox" role="switch"></label>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <h3>Relatórios</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" type="button" data-more-action="analytics"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#chart"></use></svg></span><div><strong>Análises</strong><small>Resumo do uso e efeito dos remédios por período</small></div></button>
+            <button class="menu-item" type="button" data-more-action="image"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#image"></use></svg></span><div><strong>Gerar tabela como imagem</strong><small>Prévia dos registros filtrados antes de exportar</small></div></button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <h3>Dados</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" type="button" data-more-action="import"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#import"></use></svg></span><div><strong>Importar histórico</strong><small>TXT, CSV ou backup JSON</small></div></button>
+            <button class="menu-item" type="button" data-more-action="csv"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#export"></use></svg></span><div><strong>Exportar CSV</strong><small>Compatível com o histórico atual</small></div></button>
+            <button class="menu-item" type="button" data-more-action="txt"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#export"></use></svg></span><div><strong>Exportar TXT</strong><small>Formato Data, Remédio, Alívio</small></div></button>
+            <button class="menu-item" type="button" data-more-action="backup"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#backup"></use></svg></span><div><strong>Backup completo</strong><small>Registros e lista de remédios</small></div></button>
+          </div>
+        </section>
+
+        <section class="settings-group language-group">
+          <h3>Idioma</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" id="languageBtn" type="button"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#language"></use></svg></span><div><strong>Idioma</strong><small data-mm-language-current>Automático</small></div><b>›</b></button>
+          </div>
+        </section>
+
+
+        <section class="settings-group privacy-support-group">
+          <h3 data-i18n="privacy.group">Privacidade e suporte</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" id="privacyPolicyBtn" type="button"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#check"></use></svg></span><div><strong data-i18n="privacy.policy">Política de Privacidade</strong><small data-i18n="privacy.policyDesc">Como os dados do Assistente são tratados</small></div><b>›</b></button>
+            <button class="menu-item" id="supportBtn" type="button"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#message"></use></svg></span><div><strong data-i18n="support.title">Suporte</strong><small data-i18n="support.desc">Ajuda e contato</small></div><b>›</b></button>
+          </div>
+        </section>
+
+        <section class="settings-group install-group">
+          <h3>Instalar</h3>
+          <div class="menu-list more-menu-list">
+            <button class="menu-item" type="button" data-more-action="install"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#install"></use></svg></span><div><strong>Instalar na Tela de Início</strong><small>Instruções para iPhone</small></div></button>
+          </div>
+        </section>
+        <div class="mm-destructive-zone">
+          <button id="moreClearBtn" class="danger-outline-btn" type="button">Apagar todos os dados</button>
+        </div>
+
+        <div class="tools-version-footer" id="appVersion" aria-label="Versão do aplicativo">v1.0</div>
+      </section>
+    </section>
+  </main>
+
+  <nav class="mm-tabbar" aria-label="Navegação principal" role="tablist">
+    <button id="tabBtnRegister" class="mm-tabbar__button is-active" type="button" data-mm-view="home" aria-selected="true"><span class="mm-tabbar__icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#home"></use></svg></span><span class="mm-tabbar__label">Início</span></button>
+    <button id="tabBtnHistory" class="mm-tabbar__button" type="button" data-mm-view="history" aria-selected="false"><span class="mm-tabbar__icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#history"></use></svg></span><span class="mm-tabbar__label">Histórico</span></button>
+    <button id="tabBtnSchedules" class="mm-tabbar__button" type="button" data-mm-view="schedules" aria-selected="false"><span class="mm-tabbar__icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#medicine"></use></svg></span><span class="mm-tabbar__label">Agendamentos</span></button>
+    <button id="tabBtnMore" class="mm-tabbar__button" type="button" data-mm-view="tools" aria-selected="false"><span class="mm-tabbar__icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#tools"></use></svg></span><span class="mm-tabbar__label">Ferramentas</span></button>
+  </nav>
+
+  <div id="overlay" class="overlay" hidden></div>
+
+  <aside id="privacyPolicySheet" class="mm-secondary-layer privacy-policy-layer" data-mm-secondary-layer="privacy-policy" aria-hidden="true" inert>
+    <section class="sheet mm-secondary-sheet privacy-policy-sheet">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close liquid-button" data-close-sheet data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+      <div class="mm-secondary-sheet__heading"><div class="sheet-kicker" data-i18n="privacy.group">Privacidade e suporte</div><h2 data-i18n="privacy.policy">Política de Privacidade</h2></div>
+      <div id="privacyPolicyContent" class="privacy-policy-content" aria-live="polite"></div>
+    </section>
+  </aside>
+
+
+  <aside id="supportDialog" class="mm-secondary-layer support-dialog" data-mm-secondary-layer="support" aria-hidden="true" inert>
+    <section class="sheet mm-secondary-sheet support-sheet">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close liquid-button" data-close-sheet data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+      <div class="mm-secondary-sheet__heading">
+        <div class="sheet-kicker" data-i18n="support.kicker">SUPORTE</div>
+        <h2 data-i18n="support.title">Suporte</h2>
+      </div>
+      <div class="support-copy">
+        <p data-i18n="support.explanation">Entre em contato com o suporte ou ative temporariamente o modo diagnóstico quando precisar investigar algum comportamento do app.</p>
+      </div>
+      <section class="support-config-section">
+        <button class="support-action-row" id="supportEmailBtn" type="button">
+          <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#message"></use></svg></span>
+          <span class="support-action-copy"><strong data-i18n="support.email">Enviar e-mail</strong><small data-i18n="support.emailDesc">Fale com o suporte do Assistente.</small></span>
+          <b aria-hidden="true">›</b>
+        </button>
+        <label class="switch-row">
+          <div><strong data-i18n="support.diagnosticMode">Modo diagnóstico</strong><span data-i18n="support.diagnosticDesc">Inclui informações técnicas adicionais no backup para ajudar a investigar problemas.</span></div>
+          <input id="diagnosticModeToggle" type="checkbox"><i></i>
+        </label>
+      </section>
+    </section>
+  </aside>
+
+  <aside id="editSheet" class="mm-secondary-layer mm-edit-record-layer" data-mm-secondary-layer="edit-record" aria-hidden="true" inert>
+    <section class="sheet mm-secondary-sheet mm-edit-record-sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close liquid-button" data-close-sheet data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+    <div class="mm-secondary-sheet__heading"><div class="sheet-kicker" data-i18n="edit.kicker">REGISTRO</div><h2 data-i18n="edit.title">Editar registro</h2></div>
+    <div class="sheet-body">
+      <input id="editId" type="hidden">
+      <label class="datetime-field">
+        <span>Data e hora</span>
+        <span class="datetime-control">
+          <span id="editDateTimeDisplay" class="datetime-display" aria-hidden="true"></span>
+          <input id="editDateTime" type="datetime-local" step="60" aria-label="Data e hora do registro">
+        </span>
+      </label>
+      <label><span>Remédio</span><select id="editMedicine"></select></label>
+      <label><span>Alívio</span><input id="editRelief" type="text" placeholder="Ex.: 1 hora, 30 minutos, Sem alívio"></label>
+      <div class="relief-presets">
+        <button type="button" data-relief="30 minutos">30 min</button>
+        <button type="button" data-relief="1 hora">1 h</button>
+        <button type="button" data-relief="2 horas">2 h</button>
+        <button type="button" data-relief="3 horas">3 h</button>
+        <button type="button" data-relief="Sem alívio">Sem alívio</button>
+        <button type="button" data-relief="Não definido">Não definido</button>
+      </div>
+      <button id="saveEditBtn" class="primary-btn full-btn" type="button">Salvar alterações</button>
+      <button id="deleteRecordBtn" class="danger-outline-btn full-btn" type="button">Excluir registro</button>
+    </div>
+    </section>
+  </aside>
+
+  <aside id="analyticsSheet" class="mm-secondary-layer mm-analysis-layer" data-mm-secondary-layer="analysis" aria-hidden="true">
+    <section class="sheet analytics-sheet mm-analysis-sheet mm-secondary-sheet">
+      <div class="mm-analysis-sticky-zone">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close liquid-button" data-close-sheet data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+        <div class="mm-analysis-heading">
+          <div class="sheet-kicker">ANÁLISES</div>
+          <h2>Análises</h2>
+        </div>
+        <div class="mm-analysis-controls">
+          <div class="analysis-quick-range" role="group" aria-label="Atalhos de período">
+            <button type="button" class="range-chip" data-analysis-range="7" aria-pressed="false">7 dias</button>
+            <button type="button" class="range-chip" data-analysis-range="30" aria-pressed="false">30 dias</button>
+            <button type="button" class="range-chip" data-analysis-range="90" aria-pressed="false">90 dias</button>
+            <button type="button" class="range-chip" data-analysis-range="all" aria-pressed="false">Tudo</button>
+          </div>
+
+          <div class="analysis-period-grid">
+            <label>
+              <span>De</span>
+              <span class="date-control"><span class="date-display" id="analysisStartDateDisplay">Selecionar</span><input id="analysisStartDate" type="date" inputmode="numeric"></span>
+            </label>
+            <label>
+              <span>Até</span>
+              <span class="date-control"><span class="date-display" id="analysisEndDateDisplay">Selecionar</span><input id="analysisEndDate" type="date" inputmode="numeric"></span>
+            </label>
+          </div>
+        </div>
+        <div class="analysis-actions">
+          <button id="analysisImageBtn" class="primary-btn" type="button">Gerar imagem da análise</button>
+        </div>
+      </div>
+      <section class="analytics-panel analytics-panel--sheet">
+        <button id="analysisRefreshBtn" type="button" hidden>Atualizar resumo</button>
+        <div id="analysisPreview" class="analysis-preview" aria-live="polite"></div>
+      </section>
+    </section>
+  </aside>
+
+  <dialog id="medicinesSheet" class="sheet-dialog centered-dialog medicine-manager-dialog" aria-label="Gerenciar remédios">
+    <div class="sheet glass-heavy compact-sheet centered-sheet manager-sheet mm-manager-shell">
+      <button class="sheet-close liquid-button" data-close-medicine-manager type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+      <div class="sheet-kicker">REMÉDIOS</div>
+      <h2 class="manager-sheet-title">Gerenciar remédios</h2>
+      <p class="manager-sheet-copy">Organize os remédios na ordem em que devem aparecer nos seletores. Você sempre seleciona e edita os itens pelos nomes.</p>
+      <div class="manager-weight-note"><strong>1 = primeiro item da lista.</strong> A numeração aumenta conforme a ordem dos remédios.</div>
+      <div id="medicinesList" class="manager-list"></div>
+      <input id="newMedicineInput" type="text" maxlength="80" hidden aria-hidden="true">
+      <button id="addMedicineBtn" class="secondary-button secondary-btn liquid-button full manager-add" type="button">＋ Adicionar remédio</button>
+      <button id="medicineManagerDoneBtn" class="primary-button primary-btn liquid-button full manager-done" type="button">Concluir</button>
+    </div>
+  </dialog>
+
+  <aside id="installSheet" class="sheet" aria-hidden="true" inert>
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-row">
+      <h2>Instalar no iPhone</h2>
+      <button class="close-btn close-icon-btn" data-close-sheet type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+    </div>
+    <div class="sheet-body install-copy">
+      <p>Abra esta página no Safari.</p>
+      <ol>
+        <li>Toque no botão <strong>Compartilhar</strong>.</li>
+        <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
+        <li>Confirme <strong>Adicionar</strong>.</li>
+      </ol>
+      <p>Depois disso, o Assistente abre em tela cheia e continua funcionando sem conexão após a primeira carga completa.</p>
+    </div>
+  </aside>
+
+  <aside id="exportSheet" class="mm-secondary-layer mm-export-preview-layer" data-mm-secondary-layer="export-preview" aria-hidden="true">
+    <section class="sheet mm-secondary-sheet mm-export-preview-sheet">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close liquid-button" data-close-sheet data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+      <div class="mm-secondary-sheet__heading"><div class="sheet-kicker">EXPORTAR</div><h2>Prévia da imagem</h2></div>
+      <div class="filter-row glass export-preview-filters">
+        <label><span>De</span><span class="date-control"><span class="date-display" id="exportFilterFromDisplay">Selecionar</span><input type="date" id="exportFilterFrom" aria-label="Data inicial da exportação"></span></label>
+        <label><span>Até</span><span class="date-control"><span class="date-display" id="exportFilterToDisplay">Selecionar</span><input type="date" id="exportFilterTo" aria-label="Data final da exportação"></span></label>
+        <button class="filter-clear liquid-button" id="exportPreviewClearBtn" type="button">Limpar</button>
+      </div>
+      <div class="history-full-list export-preview-list" id="exportRecords"></div>
+      <div class="export-preview-actionbar"><button class="primary-button liquid-button full" id="confirmImageExportBtn" type="button">Exportar imagem</button></div>
+    </section>
+  </aside>
+
+  <dialog id="recordSavedDialog" class="dialog record-saved-dialog" aria-labelledby="recordSavedTitle">
+    <form method="dialog">
+      <div class="record-saved-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#check"></use></svg></div>
+      <h2 id="recordSavedTitle">Registro efetuado</h2>
+      <p id="recordSavedText">O registro foi salvo neste dispositivo.</p>
+      <div class="record-saved-actions">
+        <button id="recordSavedOkBtn" class="primary-btn full-btn" type="submit" value="ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="multiFilterDialog" class="dialog filter-dialog">
+    <form method="dialog">
+      <h2 id="multiFilterTitle">Filtrar</h2>
+      <p id="multiFilterSubtitle">Escolha uma ou mais opções.</p>
+      <div id="multiFilterOptions" class="filter-option-list"></div>
+      <div class="dialog-actions">
+        <button id="multiFilterClearBtn" type="button" class="secondary-btn">Limpar seleção</button>
+        <button value="close" class="primary-btn">Concluir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="reliefChoiceDialog" class="dialog relief-choice-dialog">
+    <form method="dialog">
+      <h2>Atualizar alívio</h2>
+      <p id="reliefChoiceText"></p>
+      <div class="relief-choice-actions">
+        <button value="cancel" class="secondary-btn">Cancelar</button>
+        <button value="replace" class="secondary-btn">Substituir</button>
+        <button value="prepend" class="primary-btn">Incluir no início</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" class="dialog mm-confirm-dialog">
+    <form method="dialog">
+      <h2 id="confirmTitle" data-mm-confirm-title>Confirmar</h2>
+      <p id="confirmText" data-mm-confirm-text></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="secondary-btn">Cancelar</button>
+        <button value="confirm" class="primary-btn" data-mm-confirm-button>Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="importDialog" class="dialog">
+    <form method="dialog">
+      <h2>Importar histórico</h2>
+      <p id="importSummary"></p>
+      <div class="import-choice">
+        <label><input type="radio" name="importMode" value="merge" checked> Somar aos registros existentes, eliminando duplicatas</label>
+        <label><input type="radio" name="importMode" value="replace"> Substituir todos os registros atuais</label>
+      </div>
+      <div class="dialog-actions">
+        <button value="cancel" class="secondary-btn">Cancelar</button>
+        <button id="confirmImportBtn" value="confirm" class="primary-btn">Importar</button>
+      </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="languageDialog" class="dialog mm-language-dialog" aria-labelledby="languageDialogTitle">
+    <form method="dialog">
+      <h2 id="languageDialogTitle">Idioma</h2>
+      <p class="language-dialog-copy">Idioma da interface e das exportações</p>
+      <div class="language-options" role="group" aria-label="Idioma">
+        <button type="button" class="language-option" data-locale-mode="auto" aria-pressed="false"><span><strong>Automático</strong><small>Usar o idioma do dispositivo quando disponível</small></span><b data-language-check></b></button>
+        <button type="button" class="language-option" data-locale-mode="pt-BR" aria-pressed="false"><span><strong>Português (Brasil)</strong><small>Português do Brasil</small></span><b data-language-check></b></button>
+        <button type="button" class="language-option" data-locale-mode="en-US" aria-pressed="false"><span><strong>English (United States)</strong><small>Inglês americano</small></span><b data-language-check></b></button>
+        <button type="button" class="language-option" data-locale-mode="es-ES" aria-pressed="false"><span><strong>Español (España)</strong><small>Espanhol da Espanha</small></span><b data-language-check></b></button>
+      </div>
+      <div class="dialog-actions single"><button value="cancel" class="secondary-btn">Cancelar</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <input id="fileInput" type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json" hidden>
+
+  <script src="mm-registro-i18n.js?v=4.0" defer></script>
+  <script src="i18n.js?v=1.0" defer></script>
+  <script src="mm-registro.js?v=4.0" defer></script>
+  <script src="native-runtime.js?v=1.0" defer></script>
+  <script src="app.js?v=1.0" defer></script>
+
+  <dialog id="scheduleDialog" class="mm-dialog assistente-schedule-dialog">
+    <form method="dialog" class="assistente-schedule-form" id="scheduleForm">
+      <header class="mm-secondary-header">
+        <button id="scheduleCancelBtn" class="mm-back-button liquid-button" value="cancel" type="button" aria-label="Voltar"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
+        <div class="mm-secondary-header__title"><div class="eyebrow">ASSISTENTE DE MEDICAÇÃO</div><h2 id="scheduleDialogTitle">Agendamento</h2></div>
+        <div class="mm-secondary-header__action"></div>
+      </header>
+      <div class="assistente-schedule-content">
+        <input id="scheduleId" type="hidden">
+        <label><span>Remédio</span><select id="scheduleMedicine" required></select></label>
+        <button id="scheduleManageMedicinesBtn" class="secondary-btn" type="button">Gerenciar remédios</button>
+        <div class="assistente-schedule-grid">
+          <label><span>Intervalo (horas)</span><input id="scheduleIntervalHours" type="number" min="1" max="168" step="1" value="8" required></label>
+          <label><span>Início</span><input id="scheduleStartAt" type="datetime-local" required></label>
+          <label><span>Prazo total (dias)</span><input id="scheduleDurationDays" type="number" min="1" max="365" step="1" value="7" required></label>
+        </div>
+        <section id="schedulePreview" class="panel mm-card assistente-schedule-preview"></section>
+        <button id="scheduleSaveBtn" class="primary-btn" type="submit">Salvar agendamento</button>
+        <button id="scheduleDeleteBtn" class="danger-btn" type="button" hidden>Excluir agendamento</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

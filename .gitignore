@@ -1,0 +1,12 @@
+node_modules/
+native-web/
+dist/
+.DS_Store
+
+# Xcode: version ios/, ignore only local/generated state.
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.swiftpm/
+ios/App/Pods/
+ios/App/DerivedData/

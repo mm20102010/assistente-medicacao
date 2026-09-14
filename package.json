@@ -1,0 +1,38 @@
+{
+  "name": "mm-assistente-medicacao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Assistente de Medicação - registros, agendamentos, lembretes locais e Apple Watch",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "native:build": "node scripts/build-native.mjs",
+    "native:sync": "npm run native:build && node scripts/native-sync.mjs && node scripts/apply-ios-assets.mjs",
+    "native:open": "cap open ios",
+    "native:setup-ios": "node scripts/setup-ios.mjs",
+    "native:assets": "node scripts/apply-ios-assets.mjs",
+    "native:adopt-existing": "node scripts/adopt-existing-ios.mjs",
+    "web:package": "node scripts/package-web.mjs",
+    "repo:check": "node scripts/check-repo.mjs",
+    "web:validate": "node scripts/validate-pwa.mjs",
+    "repo:adopt-ios": "node scripts/adopt-existing-ios.mjs",
+    "repo:check-full": "node scripts/check-repo-full.mjs",
+    "repo:gate": "npm test && npm run web:validate && npm run validate:repo && npm run native:verify-sync && npm run native:validate",
+    "version:set": "node scripts/set-version.mjs",
+    "validate:artifact": "node scripts/validate-release.mjs",
+    "validate:repo": "node scripts/validate-release.mjs --repo",
+    "native:validate": "node scripts/native-validate.mjs",
+    "native:gate": "npm run native:sync && npm run native:validate",
+    "native:verify-sync": "node scripts/verify-native-sync.mjs",
+    "web:restore-gate": "npm test && npm run web:validate && npm run validate:repo"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.0",
+    "@capacitor/ios": "8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.0",
+    "typescript": "^5.9.2"
+  },
+  "type": "module",
+  "marketingVersion": "1.0.0"
+}

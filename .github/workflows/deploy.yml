@@ -1,0 +1,91 @@
+name: Deploy Diario de Medicacao
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/**"
+      - "scripts/**"
+      - "ios/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.ts"
+      - "test/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Run protected repository gate
+        run: node .github/scripts/protected-repo-gate.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate repository
+        id: tests
+        run: npm run repo:gate
+
+      - name: Deploy Diario to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.114.0"
+          command: pages deploy public --project-name=diario-medicacao --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deployment summary
+        if: always()
+        shell: bash
+        env:
+          TESTS: ${{ steps.tests.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅ Concluído" ;;
+              failure) echo "❌ Falhou" ;;
+              skipped) echo "⏭️ Não necessário" ;;
+              cancelled) echo "⚠️ Cancelado" ;;
+              *) echo "— Não executado" ;;
+            esac
+          }
+
+          {
+            if [ "$JOB_STATUS" = "success" ]; then
+              echo "# ✅ Diário de Medicação publicado"
+            else
+              echo "# ❌ Falha no deploy do Diário de Medicação"
+            fi
+            echo
+            echo "| Item | Resultado |"
+            echo "|---|---|"
+            echo "| Gate completo | $(status_icon "$TESTS") |"
+            echo "| Deploy Cloudflare Pages | $(status_icon "$DEPLOY") |"
+            echo "| Projeto | \`diario-medicacao\` |"
+            echo "| Branch | \`main\` |"
+            echo "| Wrangler | \`4.114.0\` |"
+            if [ -n "$DEPLOYMENT_URL" ]; then
+              echo "| URL do deployment | $DEPLOYMENT_URL |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

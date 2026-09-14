@@ -1,0 +1,10 @@
+{
+  "version": "4.0.0",
+  "algorithm": "sha256",
+  "files": {
+    "mm-registro.css": "4f86d17eda08587a2e083d6f21ba57cb4e8f7c8caa97f5f24ae192dda6a7c560",
+    "mm-registro.js": "0ca4faf05b9b80743fd84c5f9803e427dc6e9a1f581c20de6d4395d667173118",
+    "mm-registro-i18n.js": "e349e876887c673cf5353f8c2e9c4ca80e1542985be93289e486dad37f668d95",
+    "mm-registro-icons.svg": "952831e2f779ecc25954e5b09b7886bcb283716141d8e8513d2e566d3d27fad6"
+  }
+}
