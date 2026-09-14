@@ -316,6 +316,9 @@ function sanitizeRecord(record) {
   }
 
   if (!medicine) return null;
+  const scheduleId = cleanField(record.scheduleId).slice(0, 100);
+  const scheduledAtRaw = cleanField(record.scheduledAt).slice(0, 64);
+  const scheduledAt = scheduleId && scheduledAtRaw && !Number.isNaN(new Date(scheduledAtRaw).getTime()) ? scheduledAtRaw : "";
   return {
     id: cleanField(record.id) || makeId(),
     date,
@@ -323,6 +326,8 @@ function sanitizeRecord(record) {
     rawDate,
     medicine,
     relief,
+    scheduleId: scheduledAt ? scheduleId : "",
+    scheduledAt,
     createdAt: cleanField(record.createdAt) || new Date().toISOString(),
     updatedAt: cleanField(record.updatedAt) || new Date().toISOString()
   };
@@ -336,7 +341,7 @@ function sanitizeScheduleRevision(revision) {
   const planStartAt = cleanField(revision.planStartAt || revision.startAt).slice(0,64);
   const endAt = cleanField(revision.endAt).slice(0,64);
   const effectiveFrom = cleanField(revision.effectiveFrom || planStartAt).slice(0,64);
-  if (!medicine || intervalMinutes < 60 || intervalMinutes > 10080) return null;
+  if (!medicine || intervalMinutes < 60 || intervalMinutes > 14880) return null;
   if ([planStartAt,endAt,effectiveFrom].some(v => Number.isNaN(new Date(v).getTime()))) return null;
   if (new Date(endAt) <= new Date(planStartAt)) return null;
   return { id:cleanField(revision.id)||makeId(), effectiveFrom, medicine, intervalMinutes, planStartAt, endAt };
@@ -371,17 +376,98 @@ function scheduleOccurrences(schedule, rangeStart = new Date(0), rangeEnd = new 
   return out;
 }
 function allScheduleOccurrences(rangeStart, rangeEnd) { return state.schedules.flatMap(s=>scheduleOccurrences(s,rangeStart,rangeEnd)).sort((a,b)=>a.at-b.at); }
-function matchScheduledOccurrence(record, toleranceMinutes = 180) {
-  const actual = recordDateObject(record); if (!actual) return null;
-  const candidates = allScheduleOccurrences(new Date(actual.getTime()-toleranceMinutes*60000), new Date(actual.getTime()+toleranceMinutes*60000+1)).filter(o=>normalizeKey(o.medicine)===normalizeKey(record.medicine));
-  if (!candidates.length) return null;
-  return candidates.sort((a,b)=>Math.abs(a.at-actual)-Math.abs(b.at-actual))[0];
+function scheduledOccurrenceKey(scheduleId, at) {
+  const time = at instanceof Date ? at.getTime() : new Date(at).getTime();
+  return scheduleId && Number.isFinite(time) ? `${scheduleId}|${time}` : '';
 }
-function annotateRecordWithSchedule(record) {
-  const match = matchScheduledOccurrence(record);
+function recordScheduledOccurrenceKey(record) {
+  return scheduledOccurrenceKey(cleanField(record?.scheduleId), record?.scheduledAt);
+}
+function usedScheduledOccurrenceKeys(excludeRecordId = '') {
+  const used = new Set();
+  for (const record of state.records) {
+    if (excludeRecordId && record.id === excludeRecordId) continue;
+    const key = recordScheduledOccurrenceKey(record);
+    if (key) used.add(key);
+  }
+  return used;
+}
+function matchScheduledOccurrence(record, toleranceMinutes = 180, { excludeRecordId = '' } = {}) {
+  const actual = recordDateObject(record); if (!actual) return null;
+  const used = usedScheduledOccurrenceKeys(excludeRecordId);
+  const futureAutoMs = 60 * 1000;
+  const candidates = allScheduleOccurrences(
+    new Date(actual.getTime()-toleranceMinutes*60000),
+    new Date(actual.getTime()+futureAutoMs+1)
+  ).filter(o => normalizeKey(o.medicine)===normalizeKey(record.medicine) && !used.has(scheduledOccurrenceKey(o.scheduleId,o.at)));
+  if (!candidates.length) return null;
+  return candidates.sort((a,b)=>{
+    const da=a.at.getTime()-actual.getTime(), db=b.at.getTime()-actual.getTime();
+    const distance=Math.abs(da)-Math.abs(db);
+    if (distance) return distance;
+    return da-db; // empate: prefere a dose já vencida à futura
+  })[0];
+}
+function nextOpenScheduledOccurrence(medicine, actual, { excludeRecordId = '' } = {}) {
+  if (!(actual instanceof Date) || Number.isNaN(actual.getTime())) return null;
+  const medicineKey=normalizeKey(medicine);
+  const used=usedScheduledOccurrenceKeys(excludeRecordId);
+  let best=null;
+  for (const schedule of state.schedules) {
+    if (!schedule || schedule.status==='cancelled') continue;
+    const revisions=schedule.revisions||[];
+    for (let index=0; index<revisions.length; index++) {
+      const revision=revisions[index];
+      if (normalizeKey(revision.medicine)!==medicineKey) continue;
+      const start=new Date(revision.planStartAt), effective=new Date(revision.effectiveFrom), end=new Date(revision.endAt);
+      const nextEffective=revisions[index+1]?.effectiveFrom ? new Date(revisions[index+1].effectiveFrom) : null;
+      if ([start,effective,end].some(d=>Number.isNaN(d.getTime()))) continue;
+      const segmentStart=Math.max(start.getTime(),effective.getTime());
+      const segmentEnd=Math.min(end.getTime(),nextEffective?.getTime() ?? end.getTime());
+      if (segmentEnd<=actual.getTime()) continue;
+      const step=revision.intervalMinutes*60000;
+      let target=Math.max(actual.getTime(),segmentStart);
+      let n=Math.max(0,Math.ceil((target-start.getTime())/step));
+      let t=start.getTime()+n*step;
+      if (t<segmentStart) { n=Math.ceil((segmentStart-start.getTime())/step); t=start.getTime()+n*step; }
+      while (t<segmentEnd && used.has(scheduledOccurrenceKey(schedule.id,new Date(t)))) t+=step;
+      if (t>=segmentEnd) continue;
+      const candidate={scheduleId:schedule.id,medicine:revision.medicine,at:new Date(t),revisionId:revision.id};
+      if (!best || candidate.at<best.at) best=candidate;
+    }
+  }
+  return best;
+}
+function annotateRecordWithSchedule(record, options = {}) {
+  const match = matchScheduledOccurrence(record, options.toleranceMinutes ?? 180, options);
   record.scheduleId = match?.scheduleId || '';
   record.scheduledAt = match?.at?.toISOString?.() || '';
   return record;
+}
+function isOccurrenceConsumed(occurrence, excludeRecordId = '') {
+  const key=scheduledOccurrenceKey(occurrence?.scheduleId,occurrence?.at);
+  if (!key) return false;
+  return state.records.some(record=>record.id!==excludeRecordId && recordScheduledOccurrenceKey(record)===key);
+}
+function repairNearScheduleAssociations() {
+  if (!state.schedules.length || !state.records.length) return 0;
+  let changed=0;
+  const used=new Set(state.records.map(recordScheduledOccurrenceKey).filter(Boolean));
+  const ordered=[...state.records].sort((a,b)=>(recordDateObject(a)?.getTime()||0)-(recordDateObject(b)?.getTime()||0));
+  for (const record of ordered) {
+    if (record.scheduleId && record.scheduledAt) continue;
+    const actual=recordDateObject(record); if(!actual) continue;
+    const candidates=allScheduleOccurrences(new Date(actual.getTime()-60000),new Date(actual.getTime()+60001))
+      .filter(o=>normalizeKey(o.medicine)===normalizeKey(record.medicine) && !used.has(scheduledOccurrenceKey(o.scheduleId,o.at)))
+      .sort((a,b)=>Math.abs(a.at-actual)-Math.abs(b.at-actual));
+    const match=candidates[0];
+    if (!match) continue;
+    record.scheduleId=match.scheduleId;
+    record.scheduledAt=match.at.toISOString();
+    used.add(scheduledOccurrenceKey(match.scheduleId,match.at));
+    changed++;
+  }
+  return changed;
 }
 function scheduledDoseStats(start = new Date(new Date().setHours(0,0,0,0)), end = new Date(new Date().setHours(23,59,59,999))) {
   const occurrences = allScheduleOccurrences(start,end);
@@ -395,10 +481,11 @@ function scheduledDoseStats(start = new Date(new Date().setHours(0,0,0,0)), end 
 }
 function medicationProjectionForWatch() {
   const now=new Date(), horizon=new Date(now.getTime()+72*3600000);
-  const occurrences=allScheduleOccurrences(new Date(now.getTime()-12*3600000),horizon).map(o=>({scheduleId:o.scheduleId,medicine:o.medicine,at:o.at.toISOString()}));
+  const openOccurrences=allScheduleOccurrences(new Date(now.getTime()-12*3600000),horizon).filter(o=>!isOccurrenceConsumed(o));
+  const occurrences=openOccurrences.map(o=>({scheduleId:o.scheduleId,medicine:o.medicine,at:o.at.toISOString()}));
   const todayStart=new Date(); todayStart.setHours(0,0,0,0); const todayEnd=new Date(todayStart.getTime()+86400000);
-  const stats=scheduledDoseStats(todayStart,todayEnd); const next=occurrences.find(o=>new Date(o.at)>now);
-  return { occurrences, todayPlanned:stats.planned, todayTaken:stats.taken, nextScheduledAt:next?.at||null };
+  const stats=scheduledDoseStats(todayStart,todayEnd); const next=openOccurrences.find(o=>o.at>now);
+  return { occurrences, todayPlanned:stats.planned, todayTaken:stats.taken, nextScheduledAt:next?.at?.toISOString?.()||null };
 }
 function validateState(input) {
   const raw = input && typeof input === "object" ? input : {};
@@ -639,6 +726,7 @@ async function syncWatchMedicationEventsFromNative({ render = true } = {}) {
       }
 
       if (render) renderAll();
+      if (typeof reconcileMedicationNotifications === 'function') { try { await reconcileMedicationNotifications(); } catch (notificationError) { console.warn('Falha ao reconciliar lembretes após registro do Watch:', notificationError); } }
     }
 
     let acknowledged = 0;
@@ -717,7 +805,10 @@ async function loadState() {
   committedRecordSignatures = new Map();
   if (saved?.recordStorageVersion === 2) {
     committedRecordSignatures = new Map((saved.records || []).map(record => [record.id, JSON.stringify(record)]));
-  } else {
+  }
+  const repairedScheduleLinks = repairNearScheduleAssociations();
+  if (saved?.recordStorageVersion !== 2 || repairedScheduleLinks > 0) {
+    diagnosticTrace('SCHEDULE_LINK_REPAIR', { repaired:repairedScheduleLinks });
     await dbPut(STATE_KEY, state);
   }
   syncMedicinesToNative({ force: true });
@@ -1016,7 +1107,6 @@ function historyRecordRow(record) {
     <div class="record-main">
       <strong>${escapeHtml(record.medicine)}${scheduled ? `<span class="record-scheduled-badge">${escapeHtml(tr('assistant.scheduledBadge'))}</span>` : ''}</strong>
       <span class="${undefinedRelief ? "undefined" : ""}">${escapeHtml(tr('field.relief'))}: ${escapeHtml(localizedRelief(record.relief))}</span>
-      ${undefinedRelief ? `<button class="assistente-inline-action quick-relief" data-action="relief" type="button">${escapeHtml(tr('relief.inform'))}</button>` : ''}
     </div>
     <div class="record-time">${escapeHtml(formatTimeOnly(record))}</div>
   </div>`;
@@ -1925,6 +2015,43 @@ async function applyReliefPreset(preset) {
   }
 }
 
+async function resolveRecordScheduleAssociation(record, { promptFuture = true, excludeRecordId = '' } = {}) {
+  annotateRecordWithSchedule(record, { excludeRecordId });
+  if (record.scheduleId && record.scheduledAt) return { linked:true, prompted:false, occurrenceAt:record.scheduledAt };
+  if (!promptFuture) return { linked:false, prompted:false };
+
+  const actual=recordDateObject(record);
+  if (!actual) return { linked:false, prompted:false };
+  const next=nextOpenScheduledOccurrence(record.medicine, actual, { excludeRecordId });
+  if (!next) return { linked:false, prompted:false };
+  const deltaMs=next.at.getTime()-actual.getTime();
+  if (deltaMs<=60000) {
+    record.scheduleId=next.scheduleId;
+    record.scheduledAt=next.at.toISOString();
+    return { linked:true, prompted:false, occurrenceAt:record.scheduledAt };
+  }
+
+  const cancelButton=els.confirmDialog?.querySelector?.('[value="cancel"]');
+  const previousCancel=cancelButton?.textContent || '';
+  if (cancelButton) cancelButton.textContent=tr('assistant.keepEventual');
+  let confirmed=false;
+  try {
+    confirmed=await confirmAction(
+      tr('assistant.linkScheduleTitle'),
+      tr('assistant.linkScheduleCopy',{medicine:record.medicine,time:formatScheduleDate(next.at)}),
+      { confirmLabel:tr('assistant.linkScheduleConfirm') }
+    );
+  } finally {
+    if (cancelButton) cancelButton.textContent=previousCancel;
+  }
+  if (confirmed) {
+    record.scheduleId=next.scheduleId;
+    record.scheduledAt=next.at.toISOString();
+    return { linked:true, prompted:true, occurrenceAt:record.scheduledAt };
+  }
+  return { linked:false, prompted:true };
+}
+
 function showRecordSavedConfirmation(medicine, date, time) {
   if (!els.recordSavedDialog) {
     showToast(tr('status.recorded'));
@@ -1958,14 +2085,16 @@ async function addRecord() {
   els.addBtn.textContent = tr('status.recording');
 
   const now = new Date().toISOString();
-  const newRecord = { id: makeId(), date, time, rawDate:"", medicine, relief:DEFAULT_RELIEF, createdAt:now, updatedAt:now };
-  state.records.push(newRecord);
+  const newRecord = { id: makeId(), date, time, rawDate:"", medicine, relief:DEFAULT_RELIEF, scheduleId:"", scheduledAt:"", createdAt:now, updatedAt:now };
   diagnosticTrace('IPHONE_RECORD_BEGIN', { eventId:newRecord.id, medicine:newRecord.medicine, date, time });
 
   try {
+    const association=await resolveRecordScheduleAssociation(newRecord,{promptFuture:true});
+    state.records.push(newRecord);
     await saveState({ reason:'iphone-add-record' });
-    diagnosticTrace('IPHONE_RECORD_PERSISTED', { eventId:newRecord.id, medicine:newRecord.medicine });
-    renderRecords();
+    diagnosticTrace('IPHONE_RECORD_PERSISTED', { eventId:newRecord.id, medicine:newRecord.medicine, scheduleId:newRecord.scheduleId||null, scheduledAt:newRecord.scheduledAt||null, prompted:Boolean(association.prompted) });
+    renderAll();
+    if (typeof reconcileMedicationNotifications === 'function') { try { await reconcileMedicationNotifications(); } catch (notificationError) { console.warn('Falha ao reconciliar lembretes após registro:', notificationError); } }
     setNow();
     showRecordSavedConfirmation(medicine, date, time);
   } catch (error) {
@@ -2006,12 +2135,13 @@ async function saveEdit() {
   record.medicine = cleanField(els.editMedicine.value);
   record.relief = cleanField(els.editRelief.value) || DEFAULT_RELIEF;
   record.updatedAt = new Date().toISOString();
-  annotateRecordWithSchedule(record);
+  await resolveRecordScheduleAssociation(record,{promptFuture:true,excludeRecordId:record.id});
   state.medicines = uniqueMedicines([...state.medicines, record.medicine]);
   await saveState({ reason:'edit-record' });
-  diagnosticTrace('RECORD_EDITED', { eventId:record.id });
+  diagnosticTrace('RECORD_EDITED', { eventId:record.id, scheduleId:record.scheduleId||null, scheduledAt:record.scheduledAt||null });
   closeSheet();
   renderAll();
+  await reconcileMedicationNotifications();
   showToast(tr('status.updated'));
 }
 
@@ -2032,7 +2162,8 @@ async function deleteCurrentRecord() {
   await saveState({ reason:'delete-record' });
   diagnosticTrace('RECORD_DELETED', { eventId:record.id });
   closeSheet();
-  renderRecords();
+  renderAll();
+  if (typeof reconcileMedicationNotifications === 'function') { try { await reconcileMedicationNotifications(); } catch (notificationError) { console.warn('Falha ao reconciliar lembretes após exclusão:', notificationError); } }
   showToast(tr('status.deleted'));
 }
 
@@ -2888,7 +3019,7 @@ function installTabbarViewportProtection() {
 function formatScheduleDate(date) { return I18N?.formatDateTime(date) || date.toLocaleString(); }
 function scheduleFormValues() {
   const medicine=cleanField(els.scheduleMedicine?.value); const intervalHours=Number(els.scheduleIntervalHours?.value); const days=Number(els.scheduleDurationDays?.value); const start=new Date(els.scheduleStartAt?.value||'');
-  if(!medicine || !Number.isFinite(intervalHours) || intervalHours<1 || !Number.isFinite(days) || days<1 || Number.isNaN(start.getTime())) return null;
+  if(!medicine || !Number.isFinite(intervalHours) || intervalHours<1 || intervalHours>248 || !Number.isFinite(days) || days<1 || Number.isNaN(start.getTime())) return null;
   const end=new Date(start.getTime()+days*86400000); return {medicine, intervalMinutes:Math.round(intervalHours*60), start, end, days};
 }
 function renderSchedulePreview() {
@@ -2976,9 +3107,13 @@ async function deleteCurrentSchedule() {
 function scheduleProgress(schedule) {
   const rev=currentScheduleRevision(schedule);
   if(!rev)return {planned:0,taken:0};
-  const planned=scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date()).length;
-  const taken=state.records.filter(r=>r.scheduleId===schedule.id).length;
-  return {planned,taken};
+  const now=new Date();
+  const due=scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date(now.getTime()+1));
+  const currentRevisionKeys=new Set(scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date(rev.endAt)).map(o=>scheduledOccurrenceKey(o.scheduleId,o.at)));
+  const linkedKeys=new Set(state.records.filter(r=>r.scheduleId===schedule.id).map(recordScheduledOccurrenceKey).filter(key=>key&&currentRevisionKeys.has(key)));
+  const plannedKeys=new Set(due.map(o=>scheduledOccurrenceKey(o.scheduleId,o.at)));
+  for (const key of linkedKeys) plannedKeys.add(key);
+  return {planned:plannedKeys.size,taken:linkedKeys.size};
 }
 function renderSchedules() {
   if(!els.schedulesList)return;
@@ -3000,8 +3135,8 @@ function renderSchedules() {
         const p=scheduleProgress(schedule);
         return `<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
           <span class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
-          <span class="record-main"><strong>${escapeHtml(r.medicine)}</strong><span>${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}))} · ${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span></span>
-          <span class="assistente-schedule-progress"><strong>${p.taken}</strong><small>${escapeHtml(tr('assistant.ofPlanned',{count:p.planned}))}</small></span>
+          <span class="record-main"><strong>${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span>${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span></span>
+          <span class="assistente-schedule-progress"><strong>${p.taken}/${p.planned}</strong></span>
         </button>`;
       }).join('')}</div>
     </section>`).join('') || `<div class="panel empty-state mm-card"><h2>${escapeHtml(tr('assistant.noSchedules'))}</h2><p>${escapeHtml(tr('assistant.noSchedulesHelp'))}</p></div>`;
@@ -3010,7 +3145,7 @@ function renderReminderToggle(){if(els.remindersToggle)els.remindersToggle.check
 async function reconcileMedicationNotifications(){
   if(!window.MMNative?.isIOS||typeof window.MMNative?.reconcileMedicationNotifications!=='function')return;
   const now=new Date();
-  const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now).slice(0,60);
+  const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now&&!isOccurrenceConsumed(o)).slice(0,60);
   await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({id:`medsched.${o.scheduleId}.${o.at.getTime()}`,title:o.medicine,body:tr('assistant.notificationBody'),at:o.at.toISOString()})),state.remindersEnabled!==false);
 }
 function renderAdherenceAnalysis(){

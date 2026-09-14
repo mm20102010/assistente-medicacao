@@ -2222,3 +2222,117 @@ html[data-mm-runtime="native"] #installSheet{
 }
 .tab-panel__register-wrap .assistente-home-actions,
 .tab-panel__register-wrap .new-entry{flex:0 0 auto;width:100%}
+
+/* Assistente 1.0 — refinement pass: Home rhythm, schedule sheet, compact History/Schedules. */
+body.mm-registro--assistente #historyFilterActions[hidden]{display:none!important}
+
+.tab-panel__register-wrap{
+  gap:20px;
+  justify-content:center;
+}
+.tab-panel__register-wrap .assistente-home-actions{margin:0;gap:14px}
+@media(max-height:820px){
+  .tab-panel__register-wrap{justify-content:flex-start;padding-top:16px}
+}
+
+/* Keep the schedule sheet chrome fixed; only the form content scrolls. */
+body.mm-registro--assistente .assistente-schedule-sheet{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden!important;
+}
+body.mm-registro--assistente .assistente-schedule-sheet>.sheet-handle,
+body.mm-registro--assistente .assistente-schedule-sheet>.mm-secondary-sheet__heading{
+  flex:0 0 auto;
+}
+body.mm-registro--assistente .assistente-schedule-form{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:0 0 calc(10px + var(--mm-safe-bottom));
+  scroll-padding-bottom:20px;
+}
+
+/* All editable schedule controls use the same geometry. */
+body.mm-registro--assistente .assistente-field-row input,
+body.mm-registro--assistente .assistente-field-row select{
+  box-sizing:border-box;
+  height:56px!important;
+  min-height:56px!important;
+  max-height:56px!important;
+  line-height:1.2;
+}
+body.mm-registro--assistente .assistente-field-row input[type="datetime-local"]{
+  text-align:center;
+  text-align-last:center;
+}
+body.mm-registro--assistente .assistente-field-row input[type="datetime-local"]::-webkit-date-and-time-value{
+  width:100%;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+body.mm-registro--assistente .assistente-field-row input[type="datetime-local"]::-webkit-datetime-edit{
+  margin:0 auto;
+  padding:0;
+}
+
+/* History rows are intentionally equal-height; tap anywhere to edit. */
+body.mm-registro--assistente .assistente-history-row{
+  height:76px;
+  min-height:76px;
+  max-height:76px;
+}
+body.mm-registro--assistente .assistente-history-row .record-main strong,
+body.mm-registro--assistente .assistente-history-row .record-main>span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Schedule summary: interval stays beside the medicine and progress is a compact fraction. */
+body.mm-registro--assistente .assistente-schedule-row .record-main strong{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.mm-registro--assistente .assistente-schedule-interval{
+  flex:0 1 auto;
+  color:#b7c5d4;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:500;
+  white-space:nowrap;
+}
+body.mm-registro--assistente .assistente-schedule-row .record-main>span{
+  margin-top:5px;
+  font-size:14px;
+  line-height:1.4;
+}
+body.mm-registro--assistente .assistente-schedule-progress{
+  flex:0 0 64px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+body.mm-registro--assistente .assistente-schedule-progress strong{
+  font-size:21px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+
+@media(max-width:520px){
+  .tab-panel__register-wrap{gap:18px}
+  .tab-panel__register-wrap .assistente-home-actions{gap:13px}
+  body.mm-registro--assistente .assistente-history-row{height:72px;min-height:72px;max-height:72px}
+  body.mm-registro--assistente .assistente-schedule-row .record-main>span{font-size:13px}
+  body.mm-registro--assistente .assistente-schedule-interval{font-size:13px}
+}

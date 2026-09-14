@@ -34,14 +34,14 @@
             </header>
       <div class="tab-panel__register-wrap">
         <section class="assistente-home-actions" aria-label="Ações rápidas">
-          <button id="homeScheduleBtn" class="assistente-home-action liquid-button mm-card" type="button">
-            <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
-            <span class="assistente-home-action__copy"><strong data-i18n="assistant.scheduleAction">Agendar medicamento</strong><small data-i18n="assistant.homeScheduleDesc">Criar uma rotina recorrente</small></span>
-            <b aria-hidden="true">›</b>
-          </button>
           <button id="homeMedicinesBtn" class="assistente-home-action liquid-button mm-card" type="button">
             <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#medicine"></use></svg></span>
             <span class="assistente-home-action__copy"><strong data-i18n="tools.medicines">Gerenciar remédios</strong><small data-i18n="tools.medicinesDesc">Adicionar, reordenar, renomear ou excluir</small></span>
+            <b aria-hidden="true">›</b>
+          </button>
+          <button id="homeScheduleBtn" class="assistente-home-action liquid-button mm-card" type="button">
+            <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
+            <span class="assistente-home-action__copy"><strong data-i18n="assistant.scheduleAction">Agendar medicamento</strong><small data-i18n="assistant.homeScheduleDesc">Criar uma rotina recorrente</small></span>
             <b aria-hidden="true">›</b>
           </button>
         </section>
@@ -463,7 +463,7 @@
         <section class="assistente-form-section">
           <div class="assistente-form-section__heading"><strong data-i18n="assistant.timing">Horários</strong><small data-i18n="assistant.timingHelp">Defina o intervalo, o início e a duração do tratamento.</small></div>
           <div class="assistente-schedule-grid">
-            <label class="assistente-field-row"><span data-i18n="assistant.intervalHours">Intervalo (horas)</span><input id="scheduleIntervalHours" type="number" min="1" max="168" step="1" value="8" required inputmode="numeric"></label>
+            <label class="assistente-field-row"><span data-i18n="assistant.intervalHours">Intervalo (horas)</span><input id="scheduleIntervalHours" type="number" min="1" max="248" step="1" value="8" required inputmode="numeric"></label>
             <label class="assistente-field-row assistente-field-row--stacked"><span data-i18n="assistant.start">Início</span><input id="scheduleStartAt" type="datetime-local" required></label>
             <label class="assistente-field-row"><span data-i18n="assistant.durationDays">Prazo total (dias)</span><input id="scheduleDurationDays" type="number" min="1" max="365" step="1" value="7" required inputmode="numeric"></label>
           </div>

@@ -59,3 +59,37 @@ test('Lembretes usam switch visual do app, sem checkbox nativo ampliado', () => 
   assert.match(css, /\.assistente-switch input:checked\+i/);
   assert.doesNotMatch(css.slice(css.lastIndexOf('Assistente 1.0')), /assistente-toggle-row input\{[^}]*scale/);
 });
+
+
+test('Home mostra Gerenciar remédios antes de Agendar medicamento e mantém espaçamento vertical', () => {
+  assert.ok(html.indexOf('id="homeMedicinesBtn"') < html.indexOf('id="homeScheduleBtn"'));
+  assert.match(css, /\.tab-panel__register-wrap\s*\{[^}]*gap:20px/s);
+  assert.match(css, /\.assistente-home-actions\{[^}]*gap:14px/s);
+});
+
+test('sheet de agendamento mantém header fixo e controles editáveis com a mesma altura', () => {
+  assert.match(css, /\.assistente-schedule-sheet\{[^}]*display:flex[^}]*overflow:hidden/s);
+  assert.match(css, /\.assistente-schedule-form\{[^}]*overflow-y:auto/s);
+  assert.match(css, /\.assistente-field-row input,[\s\S]*\.assistente-field-row select\{[\s\S]*height:56px!important/s);
+  assert.match(html, /id="scheduleIntervalHours"[^>]*max="248"/);
+  assert.match(css, /input\[type="datetime-local"\][\s\S]*text-align:center/s);
+});
+
+test('Histórico esconde Limpar filtros sem filtro e não mostra ação Informar alívio nos cards', () => {
+  assert.match(css, /#historyFilterActions\[hidden\]\{display:none!important\}/);
+  const block = app.slice(app.indexOf('function historyRecordRow'), app.indexOf('function renderRecords'));
+  assert.doesNotMatch(block, /quick-relief|relief\.inform|assistente-inline-action/);
+  assert.match(css, /\.assistente-history-row\{[\s\S]*height:76px/s);
+});
+
+test('Agendamentos exibem intervalo ao lado do nome e progresso como fração', () => {
+  const block = app.slice(app.indexOf('function renderSchedules()'), app.indexOf('function renderReminderToggle()'));
+  assert.match(block, /assistente-schedule-interval/);
+  assert.match(block, /\$\{p\.taken\}\/\$\{p\.planned\}/);
+  assert.doesNotMatch(block, /assistant\.ofPlanned/);
+});
+
+test('confirmação de baixa antecipada está localizada nos três idiomas', () => {
+  const keys=['assistant.linkScheduleTitle','assistant.linkScheduleCopy','assistant.linkScheduleConfirm','assistant.keepEventual'];
+  for (const locale of ['pt-BR','en-US','es-ES']) for (const key of keys) assert.equal(typeof catalog?.[locale]?.[key], 'string', `${locale}: ${key}`);
+});

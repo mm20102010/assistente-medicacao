@@ -36,9 +36,9 @@ test('edição cria nova vigência sem reescrever horários históricos', () => 
   assert.ok(!out.includes('2026-09-19T13:00:00.000Z')); // antigo 10h não sobrevive após vigência
 });
 
-test('registro eventual permanece sem scheduleId; agendado é associado automaticamente', () => {
+test('registro eventual permanece sem scheduleId; dose atrasada do agendado é associada automaticamente', () => {
   const ctx=makeContext(); setState(ctx,{records:[],medicines:['Amoxil 500','Dipirona'],schedules:[schedule([rev()])],remindersEnabled:true});
-  const scheduled=val(ctx, `annotateRecordWithSchedule(sanitizeRecord({id:'a',medicine:'Amoxil 500',date:'2026-09-17',time:'10:12',relief:'Não definido'}))`);
+  const scheduled=val(ctx, `(()=>{ const d=new Date('2026-09-17T13:12:00Z'); const pad=n=>String(n).padStart(2,'0'); return annotateRecordWithSchedule(sanitizeRecord({id:'a',medicine:'Amoxil 500',date:d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),time:pad(d.getHours())+':'+pad(d.getMinutes()),relief:'Não definido'})); })()`);
   const eventual=val(ctx, `annotateRecordWithSchedule(sanitizeRecord({id:'b',medicine:'Dipirona',date:'2026-09-17',time:'15:00',relief:'Não definido'}))`);
   assert.equal(scheduled.scheduleId,'s1'); assert.ok(scheduled.scheduledAt);
   assert.equal(eventual.scheduleId,''); assert.equal(eventual.scheduledAt,'');
@@ -73,4 +73,60 @@ test('projeção do Watch contém apenas a agenda e mantém próximos horários 
   assert.ok(projection.occurrences.length>=1);
   assert.ok(projection.occurrences.every(o=>o.medicine==='Amoxil 500'));
   assert.ok(projection.nextScheduledAt);
+});
+
+
+test('sanitizeRecord preserva scheduleId e scheduledAt válidos', () => {
+  const ctx=makeContext();
+  const record=val(ctx, `sanitizeRecord({id:'a',medicine:'Amoxil 500',date:'2026-09-17',time:'10:00',relief:'Não definido',scheduleId:'s1',scheduledAt:'2026-09-17T13:00:00.000Z'})`);
+  assert.equal(record.scheduleId,'s1');
+  assert.equal(record.scheduledAt,'2026-09-17T13:00:00.000Z');
+});
+
+test('dose futura até 1 minuto é baixada automaticamente; acima disso exige decisão do usuário', () => {
+  const ctx=makeContext();
+  const start=new Date(2026,8,17,10,0,45), end=new Date(start.getTime()+24*3600000);
+  setState(ctx,{records:[],medicines:['Amoxil 500'],schedules:[schedule([rev({start:start.toISOString(),end:end.toISOString(),effective:start.toISOString(),interval:480})])],remindersEnabled:true});
+  const near=val(ctx, `annotateRecordWithSchedule(sanitizeRecord({id:'near',medicine:'Amoxil 500',date:'2026-09-17',time:'10:00',relief:'Não definido'}))`);
+  assert.equal(near.scheduleId,'s1');
+
+  const future=new Date(2026,8,17,10,10,0), futureEnd=new Date(future.getTime()+24*3600000);
+  setState(ctx,{records:[],medicines:['Amoxil 500'],schedules:[schedule([rev({start:future.toISOString(),end:futureEnd.toISOString(),effective:future.toISOString(),interval:480})])],remindersEnabled:true});
+  const early=val(ctx, `annotateRecordWithSchedule(sanitizeRecord({id:'early',medicine:'Amoxil 500',date:'2026-09-17',time:'10:05',relief:'Não definido'}))`);
+  assert.equal(early.scheduleId,'');
+  const next=val(ctx, `nextOpenScheduledOccurrence('Amoxil 500', recordDateObject(sanitizeRecord({id:'early',medicine:'Amoxil 500',date:'2026-09-17',time:'10:05',relief:'Não definido'})))`);
+  assert.equal(next.scheduleId,'s1');
+});
+
+test('reparo de migração associa registro existente praticamente no horário sem reclassificar eventual distante', () => {
+  const ctx=makeContext();
+  const start='2026-09-14T17:05:00.000Z', end='2026-09-21T17:05:00.000Z';
+  const d=new Date(start); const pad=n=>String(n).padStart(2,'0');
+  const same={id:'dip',medicine:'Dipirona',date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`,relief:'Não definido',scheduleId:'',scheduledAt:''};
+  const farDate=new Date(d.getTime()-2*3600000);
+  const far={id:'far',medicine:'Dipirona',date:`${farDate.getFullYear()}-${pad(farDate.getMonth()+1)}-${pad(farDate.getDate())}`,time:`${pad(farDate.getHours())}:${pad(farDate.getMinutes())}`,relief:'Não definido',scheduleId:'',scheduledAt:''};
+  setState(ctx,{records:[same,far],medicines:['Dipirona'],schedules:[schedule([rev({medicine:'Dipirona',start,end,effective:start,interval:360})])],remindersEnabled:true});
+  const changed=val(ctx,'repairNearScheduleAssociations()');
+  assert.equal(changed,1);
+  assert.equal(val(ctx,"state.records.find(r=>r.id==='dip').scheduleId"),'s1');
+  assert.equal(val(ctx,"state.records.find(r=>r.id==='far').scheduleId"),'');
+});
+
+test('progresso do agendamento usa fração única e inclui dose futura já confirmada', () => {
+  const ctx=makeContext();
+  const start=new Date(Date.now()+60*60_000), end=new Date(start.getTime()+24*3600000);
+  const r=rev({start:start.toISOString(),end:end.toISOString(),effective:start.toISOString(),interval:480});
+  const linked={id:'a',medicine:'Amoxil 500',date:'2026-09-14',time:'12:00',relief:'Não definido',scheduleId:'s1',scheduledAt:start.toISOString()};
+  setState(ctx,{records:[linked],medicines:['Amoxil 500'],schedules:[schedule([r])],remindersEnabled:true});
+  const progress=val(ctx,'scheduleProgress(state.schedules[0])');
+  assert.deepEqual(JSON.parse(JSON.stringify(progress)),{planned:1,taken:1});
+});
+
+test('intervalo do agendamento aceita até 248 horas e rejeita 249', () => {
+  const ctx=makeContext();
+  const base={id:'r',effectiveFrom:'2026-09-14T10:00:00Z',medicine:'X',planStartAt:'2026-09-14T10:00:00Z',endAt:'2026-10-14T10:00:00Z'};
+  ctx.__ok={...base,intervalMinutes:248*60};
+  ctx.__bad={...base,intervalMinutes:249*60};
+  assert.ok(val(ctx,'sanitizeScheduleRevision(__ok)'));
+  assert.equal(val(ctx,'sanitizeScheduleRevision(__bad)'),null);
 });
