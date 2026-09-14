@@ -441,7 +441,59 @@ struct ContentView: View {
 
                 .zIndex(20)
             }
+
+            if let medicine = watch.notificationConfirmationMedicine {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(DiarioWatchPalette.secondaryText)
+
+                    Text(
+                        String(
+                            format: watch.text("registeredFormat", fallback: "%@ registrado"),
+                            medicine
+                        )
+                    )
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.72)
+                    .lineLimit(3)
+                    .padding(.horizontal, 12)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            DiarioWatchPalette.backgroundTop,
+                            DiarioWatchPalette.backgroundMiddle,
+                            DiarioWatchPalette.backgroundBottom
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+                .zIndex(40)
+            }
         }
+        .onAppear { handlePendingScheduledNotification() }
+        .onReceive(NotificationCenter.default.publisher(for: .assistenteScheduledMedicationNotificationOpened)) { _ in
+            handlePendingScheduledNotification()
+        }
+    }
+
+    private func handlePendingScheduledNotification() {
+        guard let context = WatchNotificationRouter.consumePendingContext(),
+              let medicine = context["medicine"],
+              let scheduleId = context["scheduleId"],
+              let scheduledAt = context["scheduledAt"] else { return }
+        watch.registerScheduledMedicationFromNotification(
+            medicine: medicine,
+            scheduleId: scheduleId,
+            scheduledAt: scheduledAt
+        )
     }
 }
 

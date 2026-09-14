@@ -270,7 +270,8 @@ test('epoch + revisão impedem snapshot antigo do iPhone de recuperar autoridade
 
 test('reset espera writers iPhone -> Watch em voo antes do cutoff e antes de liberar a UI', async () => {
   const app = await read('public/app.js');
-  const replaceStart = app.indexOf("if (mode === \"replace\")");
+  const importStart = app.indexOf('async function applyPendingImport()');
+  const replaceStart = app.indexOf("if (mode === \"replace\")", importStart);
   const replaceEnd = app.indexOf("} else {", replaceStart);
   const replace = app.slice(replaceStart, replaceEnd);
   assert.match(replace, /watchEventSyncPromise[\s\S]*?stateWriteTail[\s\S]*?nativeMedicineSyncTail[\s\S]*?resetWatchSynchronizationState\(resetAt\)/);

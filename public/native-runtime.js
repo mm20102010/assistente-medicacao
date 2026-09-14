@@ -53,13 +53,20 @@
       const result = await watchPlugin.getPendingMedicationEvents();
       const events = Array.isArray(result?.events) ? result.events : [];
       return events
-        .map(event => ({
-          id: String(event?.id ?? '').trim().slice(0, 100),
-          medicine: String(event?.medicine ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
-          occurredAt: String(event?.occurredAt ?? '').trim().slice(0, 64),
-          localDate: String(event?.localDate ?? '').trim().slice(0, 10),
-          localTime: String(event?.localTime ?? '').trim().slice(0, 5),
-        }))
+        .map(event => {
+          const normalized = {
+            id: String(event?.id ?? '').trim().slice(0, 100),
+            medicine: String(event?.medicine ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
+            occurredAt: String(event?.occurredAt ?? '').trim().slice(0, 64),
+            localDate: String(event?.localDate ?? '').trim().slice(0, 10),
+            localTime: String(event?.localTime ?? '').trim().slice(0, 5),
+          };
+          const scheduleId = String(event?.scheduleId ?? '').trim().slice(0, 100);
+          const scheduledAt = String(event?.scheduledAt ?? '').trim().slice(0, 64);
+          if (scheduleId) normalized.scheduleId = scheduleId;
+          if (scheduledAt) normalized.scheduledAt = scheduledAt;
+          return normalized;
+        })
         .filter(event => event.id && event.medicine && event.occurredAt);
     } catch (error) {
       console.warn('Não foi possível ler os registros pendentes do Apple Watch:', error);
@@ -123,9 +130,34 @@
 
   async function reconcileMedicationNotifications(notifications, enabled = true) {
     if (!watchPlugin?.reconcileMedicationNotifications) return { accepted:false, reason:'unavailable' };
-    const list = Array.isArray(notifications) ? notifications.slice(0,60).map(item=>({ id:String(item?.id||'').slice(0,160), title:String(item?.title||'').slice(0,100), body:String(item?.body||'').slice(0,180), at:String(item?.at||'').slice(0,64) })).filter(x=>x.id&&x.title&&x.at) : [];
+    const list = Array.isArray(notifications) ? notifications.slice(0,60).map(item=>({
+      id:String(item?.id||'').slice(0,160),
+      title:String(item?.title||'').slice(0,100),
+      body:String(item?.body||'').slice(0,180),
+      at:String(item?.at||'').slice(0,64),
+      medicine:String(item?.medicine||item?.title||'').slice(0,80),
+      scheduleId:String(item?.scheduleId||'').slice(0,100),
+      scheduledAt:String(item?.scheduledAt||item?.at||'').slice(0,64)
+    })).filter(x=>x.id&&x.title&&x.at) : [];
     try { return await watchPlugin.reconcileMedicationNotifications({ notifications:list, enabled:Boolean(enabled) }); }
     catch(error){ console.warn('Não foi possível reconciliar os lembretes:',error); return {accepted:false,reason:'error'}; }
+  }
+
+  async function consumeScheduledMedicationNotificationContext() {
+    if (!watchPlugin?.consumeScheduledMedicationNotificationContext) return null;
+    try {
+      const result = await watchPlugin.consumeScheduledMedicationNotificationContext();
+      if (!result?.available) return null;
+      const context = {
+        medicine:String(result?.medicine||'').replace(/\s+/g,' ').trim().slice(0,80),
+        scheduleId:String(result?.scheduleId||'').trim().slice(0,100),
+        scheduledAt:String(result?.scheduledAt||'').trim().slice(0,64)
+      };
+      return context.medicine && context.scheduleId && context.scheduledAt ? context : null;
+    } catch(error) {
+      console.warn('Não foi possível recuperar o contexto do lembrete aberto:',error);
+      return null;
+    }
   }
 
   // Keep the WebView event-driven: when Swift receives a Watch medication event,
@@ -141,6 +173,17 @@
     })
   : Promise.resolve(null);
 
+
+  const notificationEventsReady = watchPlugin?.addListener ? Promise.resolve(
+      watchPlugin.addListener('scheduledMedicationNotificationOpened', () => {
+        window.dispatchEvent(new CustomEvent('mm:scheduled-medication-notification-opened'));
+      })
+    ).catch(error => {
+      console.warn('Não foi possível ativar o listener de abertura de lembretes:', error);
+      throw error;
+    })
+  : Promise.resolve(null);
+
   window.MMNative = Object.freeze({
     isNative,
     platform,
@@ -152,7 +195,9 @@
     discardWatchMedicationEvent,
     resetWatchSynchronizationState,
     reconcileMedicationNotifications,
+    consumeScheduledMedicationNotificationContext,
     watchEventsReady,
+    notificationEventsReady,
   });
 
   document.documentElement.dataset.mmRuntime = isNative ? 'native' : 'web';

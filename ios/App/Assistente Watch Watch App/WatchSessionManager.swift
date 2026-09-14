@@ -21,6 +21,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
     @Published private(set) var todayTaken: Int = 0
     @Published private(set) var nextScheduledAt: Date? = nil
     @Published var deliveryMessage: String?
+    @Published var notificationConfirmationMedicine: String?
 
     private struct MedicationEvent: Codable, Equatable {
         let id: String
@@ -28,9 +29,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
         let occurredAt: String
         let localDate: String
         let localTime: String
+        let scheduleId: String?
+        let scheduledAt: String?
 
         var dictionary: [String: Any] {
-            [
+            var payload: [String: Any] = [
                 "type": "medicationTaken",
                 "id": id,
                 "medicine": medicine,
@@ -38,6 +41,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
                 "localDate": localDate,
                 "localTime": localTime
             ]
+            if let scheduleId, !scheduleId.isEmpty { payload["scheduleId"] = scheduleId }
+            if let scheduledAt, !scheduledAt.isEmpty { payload["scheduledAt"] = scheduledAt }
+            return payload
         }
     }
 
@@ -50,11 +56,13 @@ final class WatchSessionManager: NSObject, ObservableObject {
     private let maxPendingEvents = 10_000
     private var backgroundTransferIDs = Set<String>()
     private var immediateTransferIDs = Set<String>()
+    private var quietEventIDs = Set<String>()
     private static let immediateSendFallbackSeconds: TimeInterval = 1.5
 
     // Impede que o timer de uma confirmação antiga apague
     // uma mensagem mais recente.
     private var deliveryMessageGeneration = 0
+    private var notificationConfirmationGeneration = 0
 
     override init() {
         super.init()
@@ -75,23 +83,66 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     func registerMedication(_ rawMedicine: String) {
-        let medicine = rawMedicine
-            .split(whereSeparator: { $0.isWhitespace })
-            .joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
+        let medicine = Self.normalizedMedicine(rawMedicine)
         guard !medicine.isEmpty else { return }
 
-        let event = makeMedicationEvent(
-            medicine: String(medicine.prefix(80))
-        )
+        let event = makeMedicationEvent(medicine: medicine)
 
         guard appendPendingEvent(event) else {
             showDeliveryMessage(text("saveFailed", fallback: "Não foi possível salvar"))
             return
         }
+        applyOptimisticProjection(for: medicine, at: Date())
         showDeliveryMessage(text("sending", fallback: "Enviando…"))
         transmit(event)
+    }
+
+    func registerScheduledMedicationFromNotification(
+        medicine rawMedicine: String,
+        scheduleId rawScheduleId: String,
+        scheduledAt rawScheduledAt: String
+    ) {
+        let medicine = Self.normalizedMedicine(rawMedicine)
+        let scheduleId = rawScheduleId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let scheduledAt = rawScheduledAt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !medicine.isEmpty, !scheduleId.isEmpty, RecordDateCodec.date(from: scheduledAt) != nil else { return }
+
+        let event = makeMedicationEvent(
+            medicine: medicine,
+            scheduleId: String(scheduleId.prefix(100)),
+            scheduledAt: String(scheduledAt.prefix(64))
+        )
+        guard appendPendingEvent(event) else {
+            showDeliveryMessage(text("saveFailed", fallback: "Não foi possível salvar"))
+            return
+        }
+
+        quietEventIDs.insert(event.id)
+        applyOptimisticProjection(scheduleId: scheduleId, scheduledAt: scheduledAt, medicine: medicine)
+        showNotificationConfirmation(medicine: medicine)
+        transmit(event)
+    }
+
+    private static func normalizedMedicine(_ rawMedicine: String) -> String {
+        String(
+            rawMedicine
+                .split(whereSeparator: { $0.isWhitespace })
+                .joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .prefix(80)
+        )
+    }
+
+    private func showNotificationConfirmation(medicine: String) {
+        notificationConfirmationGeneration += 1
+        let generation = notificationConfirmationGeneration
+        notificationConfirmationMedicine = medicine
+
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard let self, self.notificationConfirmationGeneration == generation else { return }
+            self.notificationConfirmationMedicine = nil
+        }
     }
 
     // Exibe o estado atual da entrega. Confirmações de sucesso podem
@@ -127,7 +178,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     private func makeMedicationEvent(
-        medicine: String
+        medicine: String,
+        scheduleId: String? = nil,
+        scheduledAt: String? = nil
     ) -> MedicationEvent {
         let now = Date()
         let calendar = Calendar.current
@@ -171,7 +224,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
                 format: "%02d:%02d",
                 hour,
                 minute
-            )
+            ),
+            scheduleId: scheduleId,
+            scheduledAt: scheduledAt
         )
     }
 
@@ -237,6 +292,19 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
 
+
+    private func applyOptimisticProjection(scheduleId: String, scheduledAt: String, medicine: String) {
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: scheduledAt) ?? RecordDateCodec.date(from: scheduledAt) else { return }
+        guard let index = projectionOccurrences.firstIndex(where: {
+            $0["scheduleId"] == scheduleId && RecordDateCodec.date(from: $0["at"] ?? "")?.timeIntervalSince1970 == date.timeIntervalSince1970
+        }) else { return }
+        projectionOccurrences.remove(at: index)
+        let calendar = Calendar.current
+        if calendar.isDate(date, inSameDayAs: Date()) { todayTaken = min(todayPlanned, todayTaken + 1) }
+        nextScheduledAt = projectionOccurrences.compactMap { $0["at"].flatMap(RecordDateCodec.date(from:)) }.filter { $0 > Date() }.sorted().first
+        publishAssistenteComplicationSnapshot()
+    }
 
     private func applyOptimisticProjection(for medicine: String, at now: Date) {
         let formatter = ISO8601DateFormatter()
@@ -374,9 +442,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
         let session = WCSession.default
 
         guard session.activationState == .activated else {
-            showDeliveryMessage(
-                "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
-            )
+            if !quietEventIDs.contains(event.id) {
+                showDeliveryMessage(
+                    "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
+                )
+            }
             return
         }
 
@@ -398,9 +468,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
         through session: WCSession
     ) {
         guard immediateTransferIDs.insert(event.id).inserted else {
-            showDeliveryMessage(
-                "⏳ \(self.text("queued", fallback: "Na fila"))"
-            )
+            if !quietEventIDs.contains(event.id) {
+                showDeliveryMessage(
+                    "⏳ \(self.text("queued", fallback: "Na fila"))"
+                )
+            }
             return
         }
 
@@ -417,17 +489,21 @@ final class WatchSessionManager: NSObject, ObservableObject {
                     guard self.loadPendingEvents().contains(where: { $0.id == event.id }) else {
                         return
                     }
+                    let quiet = self.quietEventIDs.contains(event.id)
                     if accepted && persisted {
                         _ = self.removePendingEvent(id: event.id)
-                        self.showDeliveryMessage(
-                            "✓ \(event.medicine)",
-                            dismissAfter: 2
-                        )
-                    } else if accepted || self.backgroundTransferIDs.contains(event.id) {
+                        self.quietEventIDs.remove(event.id)
+                        if !quiet {
+                            self.showDeliveryMessage(
+                                "✓ \(event.medicine)",
+                                dismissAfter: 2
+                            )
+                        }
+                    } else if !quiet && (accepted || self.backgroundTransferIDs.contains(event.id)) {
                         self.showDeliveryMessage(
                             "⏳ \(self.text("queued", fallback: "Na fila"))"
                         )
-                    } else {
+                    } else if !quiet {
                         self.showDeliveryMessage(
                             "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
                         )
@@ -479,9 +555,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
         through session: WCSession
     ) {
         guard session.activationState == .activated else {
-            showDeliveryMessage(
-                "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
-            )
+            if !quietEventIDs.contains(event.id) {
+                showDeliveryMessage(
+                    "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
+                )
+            }
             return
         }
 
@@ -490,16 +568,20 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // transferUserInfo não é usado no Simulator.
         // O evento permanece localmente e será tentado novamente
         // quando a conectividade mudar.
-        showDeliveryMessage(
-            "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
-        )
+        if !quietEventIDs.contains(event.id) {
+            showDeliveryMessage(
+                "⏳ \(self.text("waitingPhoneShort", fallback: "Aguardando iPhone"))"
+            )
+        }
 
         #else
 
         guard !backgroundTransferIDs.contains(event.id) else {
-            showDeliveryMessage(
-                "⏳ \(self.text("queued", fallback: "Na fila"))"
-            )
+            if !quietEventIDs.contains(event.id) {
+                showDeliveryMessage(
+                    "⏳ \(self.text("queued", fallback: "Na fila"))"
+                )
+            }
             return
         }
 
@@ -509,9 +591,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
             event.dictionary
         )
 
-        showDeliveryMessage(
-            "⏳ \(self.text("queued", fallback: "Na fila"))"
-        )
+        if !quietEventIDs.contains(event.id) {
+            showDeliveryMessage(
+                "⏳ \(self.text("queued", fallback: "Na fila"))"
+            )
+        }
 
         #endif
     }
@@ -530,8 +614,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
               let id = payload["id"] as? String, !id.isEmpty else { return }
 
         let medicine = loadPendingEvents().first(where: { $0.id == id })?.medicine
+        let quiet = quietEventIDs.contains(id)
         guard removePendingEvent(id: id) else { return }
-        if let medicine {
+        quietEventIDs.remove(id)
+        if let medicine, !quiet {
             showDeliveryMessage("✓ \(medicine)", dismissAfter: 2)
         }
     }
@@ -642,6 +728,7 @@ extension WatchSessionManager: WCSessionDelegate {
             // regredir a UI de sucesso para “Na fila”.
             guard self.loadPendingEvents().contains(where: { $0.id == id }) else { return }
 
+            if self.quietEventIDs.contains(id) { return }
             if error == nil {
                 self.showDeliveryMessage(
                     "⏳ \(self.text("queued", fallback: "Na fila"))"

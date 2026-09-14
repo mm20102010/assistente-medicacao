@@ -23,9 +23,11 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
         let occurredAt: String
         let localDate: String
         let localTime: String
+        let scheduleId: String?
+        let scheduledAt: String?
 
         var dictionary: [String: Any] {
-            [
+            var payload: [String: Any] = [
                 "type": "medicationTaken",
                 "id": id,
                 "medicine": medicine,
@@ -33,6 +35,9 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
                 "localDate": localDate,
                 "localTime": localTime
             ]
+            if let scheduleId, !scheduleId.isEmpty { payload["scheduleId"] = scheduleId }
+            if let scheduledAt, !scheduledAt.isEmpty { payload["scheduledAt"] = scheduledAt }
+            return payload
         }
     }
 
@@ -248,18 +253,23 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
         let occurredAt = compactString(payload["occurredAt"] as? String ?? "", maxLength: 64)
         let localDate = compactString(payload["localDate"] as? String ?? "", maxLength: 10)
         let localTime = compactString(payload["localTime"] as? String ?? "", maxLength: 5)
+        let scheduleId = compactString(payload["scheduleId"] as? String ?? "", maxLength: 100)
+        let scheduledAt = compactString(payload["scheduledAt"] as? String ?? "", maxLength: 64)
 
         guard !id.isEmpty, !medicine.isEmpty else { return nil }
         guard RecordDateCodec.date(from: occurredAt) != nil else { return nil }
         guard localDate.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else { return nil }
         guard localTime.range(of: #"^\d{2}:\d{2}$"#, options: .regularExpression) != nil else { return nil }
+        if !scheduledAt.isEmpty, RecordDateCodec.date(from: scheduledAt) == nil { return nil }
 
         return MedicationEvent(
             id: id,
             medicine: medicine,
             occurredAt: occurredAt,
             localDate: localDate,
-            localTime: localTime
+            localTime: localTime,
+            scheduleId: scheduleId.isEmpty ? nil : scheduleId,
+            scheduledAt: scheduledAt.isEmpty ? nil : scheduledAt
         )
     }
 
@@ -457,11 +467,16 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "acknowledgeMedicationEvent", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "discardMedicationEvent", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "resetSynchronizationState", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "reconcileMedicationNotifications", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "reconcileMedicationNotifications", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "consumeScheduledMedicationNotificationContext", returnType: CAPPluginReturnPromise)
     ]
 
     func notifyMedicationEventAvailable() {
         notifyListeners("watchMedicationEventAvailable", data: ["available": true])
+    }
+
+    func notifyScheduledMedicationNotificationOpened() {
+        notifyListeners("scheduledMedicationNotificationOpened", data: ["available": true])
     }
 
     @objc func syncMedicines(_ call: CAPPluginCall) {
@@ -538,6 +553,19 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
         ])
     }
 
+    @objc func consumeScheduledMedicationNotificationContext(_ call: CAPPluginCall) {
+        guard let context = MedicationNotificationContextStore.shared.consume() else {
+            call.resolve(["available": false])
+            return
+        }
+        call.resolve([
+            "available": true,
+            "medicine": context["medicine"] ?? "",
+            "scheduleId": context["scheduleId"] ?? "",
+            "scheduledAt": context["scheduledAt"] ?? ""
+        ])
+    }
+
     @objc func reconcileMedicationNotifications(_ call: CAPPluginCall) {
         let enabled = call.getBool("enabled") ?? true
         let raw = call.getArray("notifications", JSObject.self) ?? []
@@ -556,7 +584,18 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
                           let title = item["title"] as? String,
                           let atRaw = item["at"] as? String,
                           let date = formatter.date(from: atRaw) ?? fallback.date(from: atRaw), date > Date() else { continue }
-                    let content = UNMutableNotificationContent(); content.title = title; content.body = (item["body"] as? String) ?? ""; content.sound = .default
+                    let content = UNMutableNotificationContent(); content.title = title; content.body = (item["body"] as? String) ?? ""; content.sound = .default; content.categoryIdentifier = "MEDICATION_SCHEDULED"
+                    let scheduleId = String(item["scheduleId"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    let medicine = String(item["medicine"] as? String ?? title).trimmingCharacters(in: .whitespacesAndNewlines)
+                    let scheduledAt = String(item["scheduledAt"] as? String ?? atRaw).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !scheduleId.isEmpty, !medicine.isEmpty, !scheduledAt.isEmpty {
+                        content.userInfo = [
+                            "type": "scheduledMedication",
+                            "scheduleId": String(scheduleId.prefix(100)),
+                            "medicine": String(medicine.prefix(80)),
+                            "scheduledAt": String(scheduledAt.prefix(64))
+                        ]
+                    }
                     let comps = Calendar.current.dateComponents([.year,.month,.day,.hour,.minute], from: date)
                     group.enter(); center.add(UNNotificationRequest(identifier:id, content:content, trigger:UNCalendarNotificationTrigger(dateMatching: comps, repeats:false))) { error in if error == nil { scheduled += 1 }; group.leave() }
                 }
@@ -575,6 +614,11 @@ final class AssistenteBridgeViewController: CAPBridgeViewController {
         WatchSessionManager.shared.setMedicationEventAvailableHandler { [weak watchPlugin] in
             DispatchQueue.main.async {
                 watchPlugin?.notifyMedicationEventAvailable()
+            }
+        }
+        MedicationNotificationContextStore.shared.setHandler { [weak watchPlugin] in
+            DispatchQueue.main.async {
+                watchPlugin?.notifyScheduledMedicationNotificationOpened()
             }
         }
     }

@@ -32,14 +32,15 @@ test('runtime iOS normaliza lista e eventos pela ponte local', async () => {
   let acknowledgedID = null;
   let discardedID = null;
   let resetAt = null;
-  let nativeListener = null;
-  let dispatchedEvent = null;
+  const nativeListeners = new Map();
+  const dispatchedEvents = [];
+  let consumedNotificationContext = null;
   const ctx = {
     console,
     CustomEvent: class CustomEvent {
       constructor(type) { this.type = type; }
     },
-    dispatchEvent: event => { dispatchedEvent = event?.type || null; },
+    dispatchEvent: event => { dispatchedEvents.push(event?.type || null); },
     document: { documentElement: { dataset: {} } },
     Capacitor: {
       isNativePlatform: () => true,
@@ -72,9 +73,14 @@ test('runtime iOS normaliza lista e eventos pela ponte local', async () => {
             resetAt = options.resetAt;
             return { reset: true, resetAt };
           },
+          consumeScheduledMedicationNotificationContext: async () => ({
+            available: true,
+            medicine: 'Dipirona',
+            scheduleId: 'schedule-1',
+            scheduledAt: '2026-09-14T17:05:00.000Z',
+          }),
           addListener: async (eventName, callback) => {
-            assert.equal(eventName, 'watchMedicationEventAvailable');
-            nativeListener = callback;
+            nativeListeners.set(eventName, callback);
             return { remove: async () => {} };
           },
         };
@@ -119,9 +125,23 @@ test('runtime iOS normaliza lista e eventos pela ponte local', async () => {
   assert.equal(reset.reset, true);
   assert.equal(resetAt, '2026-08-28T10:00:00Z');
 
-  assert.equal(typeof nativeListener, 'function');
-  nativeListener();
-  assert.equal(dispatchedEvent, 'mm:watch-medication-event-available');
+  assert.equal(typeof nativeListeners.get('watchMedicationEventAvailable'), 'function');
+  assert.equal(typeof nativeListeners.get('scheduledMedicationNotificationOpened'), 'function');
+  nativeListeners.get('watchMedicationEventAvailable')();
+  nativeListeners.get('scheduledMedicationNotificationOpened')();
+  assert.deepEqual(dispatchedEvents, [
+    'mm:watch-medication-event-available',
+    'mm:scheduled-medication-notification-opened',
+  ]);
+
+  consumedNotificationContext = JSON.parse(JSON.stringify(
+    await ctx.MMNative.consumeScheduledMedicationNotificationContext()
+  ));
+  assert.deepEqual(consumedNotificationContext, {
+    medicine: 'Dipirona',
+    scheduleId: 'schedule-1',
+    scheduledAt: '2026-09-14T17:05:00.000Z',
+  });
 });
 
 test('Diário implementa registro Watch -> iPhone -> IndexedDB com deduplicação e despertar imediato', async () => {

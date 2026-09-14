@@ -1,8 +1,55 @@
 import UIKit
 import Capacitor
+import UserNotifications
+
+final class MedicationNotificationContextStore {
+    static let shared = MedicationNotificationContextStore()
+
+    private let lock = NSLock()
+    private var pendingContext: [String: String]?
+    private var handler: (() -> Void)?
+
+    private init() {}
+
+    func store(userInfo: [AnyHashable: Any]) {
+        guard (userInfo["type"] as? String) == "scheduledMedication" else { return }
+        let medicine = String(userInfo["medicine"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let scheduleID = String(userInfo["scheduleId"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let scheduledAt = String(userInfo["scheduledAt"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !medicine.isEmpty, !scheduleID.isEmpty, !scheduledAt.isEmpty else { return }
+
+        let context = [
+            "medicine": String(medicine.prefix(80)),
+            "scheduleId": String(scheduleID.prefix(100)),
+            "scheduledAt": String(scheduledAt.prefix(64))
+        ]
+
+        lock.lock()
+        pendingContext = context
+        let callback = handler
+        lock.unlock()
+        callback?()
+    }
+
+    func consume() -> [String: String]? {
+        lock.lock()
+        let context = pendingContext
+        pendingContext = nil
+        lock.unlock()
+        return context
+    }
+
+    func setHandler(_ handler: @escaping () -> Void) {
+        lock.lock()
+        self.handler = handler
+        let shouldNotify = pendingContext != nil
+        lock.unlock()
+        if shouldNotify { handler() }
+    }
+}
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
 
@@ -10,8 +57,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         
         WatchSessionManager.shared.activate()
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.delegate = self
+        notificationCenter.setNotificationCategories([
+            UNNotificationCategory(
+                identifier: "MEDICATION_SCHEDULED",
+                actions: [],
+                intentIdentifiers: [],
+                options: []
+            )
+        ])
         
         return true
+    }
+
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+        guard response.actionIdentifier != UNNotificationDismissActionIdentifier else { return }
+        MedicationNotificationContextStore.shared.store(
+            userInfo: response.notification.request.content.userInfo
+        )
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

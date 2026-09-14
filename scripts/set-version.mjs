@@ -102,7 +102,7 @@ await write('public/index.html', index);
 
 // Service Worker: cache e assets do Assistente. Não toca em mm-registro.*.
 let sw = await read('public/sw.js');
-sw = replaceRequired(sw, /assistente-medicacao-v\d+(?:\.\d+){1,2}-cf/, `assistente-medicacao-v${displayVersion}-cf`, 'nome do cache');
+sw = replaceRequired(sw, /assistente-medicacao-v\d+(?:\.\d+){1,2}-([a-z0-9]+)/i, (_match, revision) => `assistente-medicacao-v${displayVersion}-${revision}`, 'nome do cache');
 for (const asset of appOwnedAssets) sw = replaceAssetVersion(sw, asset, displayVersion);
 await write('public/sw.js', sw);
 

@@ -42,6 +42,7 @@ let entryDateTimeAuto = true;
 let entryDateTimeTimer = null;
 let singleFileExportInProgress = false;
 let recordSaveInProgress = false;
+let pendingScheduledNotificationContext = null;
 let watchEventSyncInProgress = false;
 let watchEventSyncRequested = false;
 let watchEventSyncPromise = null;
@@ -568,7 +569,8 @@ function watchTextsForNative() {
     sending: tr('watch.sending'),
     waitingPhoneShort: tr('watch.waitingPhoneShort'),
     queued: tr('watch.queued'),
-    saveFailed: tr('watch.saveFailed')
+    saveFailed: tr('watch.saveFailed'),
+    registeredFormat: tr('watch.registeredFormat')
   };
 }
 
@@ -634,16 +636,23 @@ function watchMedicationEventToRecord(event) {
     time = `${pad2(occurred.getHours())}:${pad2(occurred.getMinutes())}`;
   }
 
-  return annotateRecordWithSchedule(sanitizeRecord({
+  const rawScheduleId = cleanField(event?.scheduleId).slice(0,100);
+  const rawScheduledAt = cleanField(event?.scheduledAt).slice(0,64);
+  const scheduledAtDate = rawScheduledAt ? new Date(rawScheduledAt) : null;
+  const hasExactScheduleContext = rawScheduleId && scheduledAtDate && !Number.isNaN(scheduledAtDate.getTime());
+  const record = sanitizeRecord({
     id,
     date,
     time,
     rawDate: "",
     medicine,
     relief: DEFAULT_RELIEF,
+    scheduleId: hasExactScheduleContext ? rawScheduleId : "",
+    scheduledAt: hasExactScheduleContext ? scheduledAtDate.toISOString() : "",
     createdAt: occurred.toISOString(),
     updatedAt: occurred.toISOString()
-  }));
+  });
+  return record.scheduleId ? record : annotateRecordWithSchedule(record);
 }
 
 async function persistedRecordIDSet() {
@@ -686,6 +695,7 @@ async function syncWatchMedicationEventsFromNative({ render = true } = {}) {
 
     const existingIds = new Set(state.records.map(record => cleanField(record.id)));
     const acceptedEventIds = [];
+    const duplicateOccurrenceEventIds = new Set();
     const addedRecords = [];
 
     for (const event of events) {
@@ -699,6 +709,15 @@ async function syncWatchMedicationEventsFromNative({ render = true } = {}) {
       acceptedEventIds.push(record.id);
       if (existingIds.has(record.id)) {
         diagnosticTrace('WATCH_EVENT_ALREADY_PRESENT', { eventId:record.id });
+        continue;
+      }
+      const duplicateScheduledOccurrence = Boolean(record.scheduleId && record.scheduledAt) && state.records.some(existing =>
+        cleanField(existing.scheduleId) === cleanField(record.scheduleId) &&
+        cleanField(existing.scheduledAt) === cleanField(record.scheduledAt)
+      );
+      if (duplicateScheduledOccurrence) {
+        duplicateOccurrenceEventIds.add(record.id);
+        diagnosticTrace('WATCH_EVENT_SCHEDULE_OCCURRENCE_ALREADY_PRESENT', { eventId:record.id, scheduleId:record.scheduleId, scheduledAt:record.scheduledAt });
         continue;
       }
 
@@ -733,7 +752,7 @@ async function syncWatchMedicationEventsFromNative({ render = true } = {}) {
     if (typeof window.MMNative?.acknowledgeWatchMedicationEvent === "function") {
       if (!persistedIDs) persistedIDs = await persistedRecordIDSet();
       for (const id of acceptedEventIds) {
-        if (!persistedIDs.has(id)) {
+        if (!persistedIDs.has(id) && !duplicateOccurrenceEventIds.has(id)) {
           diagnosticTrace('WATCH_EVENT_ACK_SKIPPED_NOT_PERSISTED', { eventId:id });
           continue;
         }
@@ -797,6 +816,57 @@ function bindNativeWatchEventRecovery() {
   window.addEventListener("mm:watch-medication-event-available", onNativeMedicationEvent);
   document.addEventListener("visibilitychange", recoverVisible);
   window.addEventListener("focus", recoverVisible);
+}
+
+function clearScheduledNotificationContext() {
+  pendingScheduledNotificationContext = null;
+}
+
+function scheduledOccurrenceFromNotificationContext(context = pendingScheduledNotificationContext) {
+  if (!context) return null;
+  const scheduleId=cleanField(context.scheduleId).slice(0,100);
+  const medicine=cleanField(context.medicine).slice(0,80);
+  const scheduledAt=new Date(cleanField(context.scheduledAt).slice(0,64));
+  if (!scheduleId || !medicine || Number.isNaN(scheduledAt.getTime())) return null;
+  const schedule=state.schedules.find(item=>item.id===scheduleId && item.status!=='cancelled');
+  if (!schedule) return null;
+  const match=scheduleOccurrences(schedule,new Date(scheduledAt.getTime()-1),new Date(scheduledAt.getTime()+1))
+    .find(item=>item.at.getTime()===scheduledAt.getTime() && normalizeKey(item.medicine)===normalizeKey(medicine));
+  return match || null;
+}
+
+async function applyScheduledNotificationContext(context) {
+  const medicine=cleanField(context?.medicine).slice(0,80);
+  const scheduleId=cleanField(context?.scheduleId).slice(0,100);
+  const scheduledAt=cleanField(context?.scheduledAt).slice(0,64);
+  if (!medicine || !scheduleId || Number.isNaN(new Date(scheduledAt).getTime())) return false;
+  const normalizedContext={medicine,scheduleId,scheduledAt};
+  const occurrence=scheduledOccurrenceFromNotificationContext(normalizedContext);
+  if (!occurrence || isOccurrenceConsumed(occurrence)) {
+    clearScheduledNotificationContext();
+    diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_IGNORED',{medicine,scheduleId,scheduledAt,reason:occurrence?'already-consumed':'missing-occurrence'});
+    return false;
+  }
+  pendingScheduledNotificationContext=normalizedContext;
+  setActiveTab('register');
+  fillMedicineSelect(els.entryMedicine,medicine);
+  setNow();
+  diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_APPLIED',{medicine,scheduleId,scheduledAt,open:true});
+  return true;
+}
+
+async function consumeScheduledMedicationNotificationContext() {
+  if (!window.MMNative?.isIOS || typeof window.MMNative?.consumeScheduledMedicationNotificationContext !== 'function') return false;
+  const context=await window.MMNative.consumeScheduledMedicationNotificationContext();
+  if (!context) return false;
+  return applyScheduledNotificationContext(context);
+}
+
+function bindNativeScheduledNotificationRecovery() {
+  if (!window.MMNative?.isIOS) return;
+  window.addEventListener('mm:scheduled-medication-notification-opened',()=>{
+    consumeScheduledMedicationNotificationContext().catch(error=>console.warn('Falha ao aplicar contexto do lembrete aberto:',error));
+  });
 }
 
 async function loadState() {
@@ -949,6 +1019,7 @@ function initMMAppShell() {
     legacyViewMap: { home: "register", history: "history", schedules: "schedules", tools: "more" },
     afterViewChange: ({ nextView }) => {
       currentTab = legacyTabFromView(nextView);
+      if (nextView !== "home") clearScheduledNotificationContext();
       if (nextView === "home") refreshEntryMedicineDefault();
     }
   });
@@ -981,7 +1052,8 @@ function renderMedicineSelects() {
 
 function refreshEntryMedicineDefault() {
   if (!els.entryMedicine) return;
-  fillMedicineSelect(els.entryMedicine, state.medicines[0] || "");
+  const contextual=cleanField(pendingScheduledNotificationContext?.medicine);
+  fillMedicineSelect(els.entryMedicine, contextual || state.medicines[0] || "");
 }
 
 
@@ -2089,12 +2161,21 @@ async function addRecord() {
   diagnosticTrace('IPHONE_RECORD_BEGIN', { eventId:newRecord.id, medicine:newRecord.medicine, date, time });
 
   try {
-    const association=await resolveRecordScheduleAssociation(newRecord,{promptFuture:true});
+    let association;
+    const notificationOccurrence=scheduledOccurrenceFromNotificationContext();
+    if (notificationOccurrence && normalizeKey(notificationOccurrence.medicine)===normalizeKey(newRecord.medicine) && !isOccurrenceConsumed(notificationOccurrence)) {
+      newRecord.scheduleId=notificationOccurrence.scheduleId;
+      newRecord.scheduledAt=notificationOccurrence.at.toISOString();
+      association={linked:true,prompted:false,occurrenceAt:newRecord.scheduledAt,source:'notification'};
+    } else {
+      association=await resolveRecordScheduleAssociation(newRecord,{promptFuture:true});
+    }
     state.records.push(newRecord);
     await saveState({ reason:'iphone-add-record' });
     diagnosticTrace('IPHONE_RECORD_PERSISTED', { eventId:newRecord.id, medicine:newRecord.medicine, scheduleId:newRecord.scheduleId||null, scheduledAt:newRecord.scheduledAt||null, prompted:Boolean(association.prompted) });
     renderAll();
     if (typeof reconcileMedicationNotifications === 'function') { try { await reconcileMedicationNotifications(); } catch (notificationError) { console.warn('Falha ao reconciliar lembretes após registro:', notificationError); } }
+    clearScheduledNotificationContext();
     setNow();
     showRecordSavedConfirmation(medicine, date, time);
   } catch (error) {
@@ -3146,7 +3227,15 @@ async function reconcileMedicationNotifications(){
   if(!window.MMNative?.isIOS||typeof window.MMNative?.reconcileMedicationNotifications!=='function')return;
   const now=new Date();
   const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now&&!isOccurrenceConsumed(o)).slice(0,60);
-  await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({id:`medsched.${o.scheduleId}.${o.at.getTime()}`,title:o.medicine,body:tr('assistant.notificationBody'),at:o.at.toISOString()})),state.remindersEnabled!==false);
+  await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({
+    id:`medsched.${o.scheduleId}.${o.at.getTime()}`,
+    title:o.medicine,
+    body:tr('assistant.notificationBody'),
+    at:o.at.toISOString(),
+    medicine:o.medicine,
+    scheduleId:o.scheduleId,
+    scheduledAt:o.at.toISOString()
+  })),state.remindersEnabled!==false);
 }
 function renderAdherenceAnalysis(){
   if(!els.analysisPreview||!els.analysisPreview.isConnected)return;
@@ -3191,6 +3280,11 @@ function bindEvents() {
     if (entryDateTimeAuto && document.visibilityState === "visible") refreshEntryDateTimeNow();
   });
   els.addBtn.addEventListener("click", addRecord);
+  els.entryMedicine?.addEventListener('change',()=>{
+    if (pendingScheduledNotificationContext && normalizeKey(els.entryMedicine.value)!==normalizeKey(pendingScheduledNotificationContext.medicine)) {
+      clearScheduledNotificationContext();
+    }
+  });
   els.searchInput.addEventListener("input", () => { historyRenderLimit = HISTORY_RENDER_BATCH; renderRecords(); });
   els.dateFilterBtn.addEventListener("click", () => openMultiFilterDialog("history", "dates"));
   els.medicineFilterBtn.addEventListener("click", () => openMultiFilterDialog("history", "medicines"));
@@ -3323,11 +3417,16 @@ async function init() {
     await loadState();
     diagnosticTrace('STATE_LOADED');
     bindNativeWatchEventRecovery();
+    bindNativeScheduledNotificationRecovery();
     await window.MMNative?.watchEventsReady?.catch?.(error => {
       diagnosticTrace('WATCH_LISTENER_READY_ERROR', { message:String(error?.message || error) });
     });
+    await window.MMNative?.notificationEventsReady?.catch?.(error => {
+      diagnosticTrace('NOTIFICATION_LISTENER_READY_ERROR', { message:String(error?.message || error) });
+    });
     await syncWatchMedicationEventsFromNative({ render: false });
     renderAll();
+    await consumeScheduledMedicationNotificationContext();
     await reconcileMedicationNotifications();
     // The register screen always starts with the first medicine in the persisted order.
     // renderAll() can preserve a stale pre-load selection, so reset only after loadState().

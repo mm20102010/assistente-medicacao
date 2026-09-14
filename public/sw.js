@@ -1,4 +1,4 @@
-const CACHE = "assistente-medicacao-v1.0-cf";
+const CACHE = "assistente-medicacao-v1.0-cg";
 const APP_SHELL = "./";
 const ASSETS = [
   APP_SHELL,

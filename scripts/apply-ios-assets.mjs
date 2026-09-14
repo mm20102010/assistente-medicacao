@@ -61,9 +61,9 @@ if (applied === 0) {
 
 contents.info = contents.info || { author: 'xcode', version: 1 };
 await writeFile(contentsPath, `${JSON.stringify(contents, null, 2)}\n`, 'utf8');
-console.log(`Ícone nativo do Diário aplicado ao catálogo iOS (${applied} slot${applied === 1 ? '' : 's'}).`);
+console.log(`Ícone nativo do Assistente aplicado ao catálogo iOS (${applied} slot${applied === 1 ? '' : 's'}).`);
 
-// O Watch usa o mesmo ícone-fonte do Diário para manter a identidade visual
+// O Watch usa o mesmo ícone-fonte do Assistente para manter a identidade visual
 // e para que native:sync também restaure o asset em clones novos do repositório.
 if (await exists(watchContentsPath)) {
   const watchContents = JSON.parse(await readFile(watchContentsPath, 'utf8'));
@@ -78,5 +78,5 @@ if (await exists(watchContentsPath)) {
   }];
   watchContents.info = watchContents.info || { author: 'xcode', version: 1 };
   await writeFile(watchContentsPath, `${JSON.stringify(watchContents, null, 2)}\n`, 'utf8');
-  console.log('Ícone nativo do Diário aplicado ao catálogo watchOS.');
+  console.log('Ícone nativo do Assistente aplicado ao catálogo watchOS.');
 }
