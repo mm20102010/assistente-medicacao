@@ -23,6 +23,9 @@ if (!config.match(/contentInset:\s*['"]never['"]/)) errors.push('Capacitor iOS d
 if (!/<key>CFBundleDevelopmentRegion<\/key>\s*<string>en<\/string>/.test(info)) errors.push('CFBundleDevelopmentRegion deve ser en');
 if (!/developmentRegion = en;/.test(pbx)) errors.push('developmentRegion do Xcode deve ser en');
 if (!packageSwift.includes('exact: "8.5.0"')) errors.push('Capacitor SPM deve estar fixado em 8.5.0');
+if (/config\.xml/.test(pbx)) errors.push('project.pbxproj não pode referenciar config.xml legado/inexistente; Capacitor 8 usa capacitor.config.json');
+if (!pbx.includes('capacitor.config.json in Resources')) errors.push('capacitor.config.json deve estar em Resources');
+if (!exists('ios/App/App/capacitor.config.json')) errors.push('capacitor.config.json nativo ausente; execute native:sync');
 if (!/TARGETED_DEVICE_FAMILY = 1;/.test(pbx)) errors.push('target iPhone deve excluir iPad');
 if ((pbx.match(/TARGETED_DEVICE_FAMILY = 4;/g) || []).length !== 4) errors.push('Watch e complication devem usar device family 4 em Debug + Release');
 if ((pbx.match(/WATCHOS_DEPLOYMENT_TARGET = 10\.0;/g) || []).length !== 4) errors.push('Watch e complication devem usar watchOS 10.0 em Debug + Release');

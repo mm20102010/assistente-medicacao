@@ -19,6 +19,10 @@ test('configuração Capacitor B2 é reproduzível', async () => {
   assert.match(capacitorConfig, /contentInset:\s*['"]never['"]/, 'WKWebView não deve duplicar a safe area do CSS');
   assert.doesNotMatch(capacitorConfig, /contentInset:\s*['"]automatic['"]/, 'contentInset automatic reintroduz divergência visual com o PWA');
 
+  const pbx = await readFile(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8');
+  assert.doesNotMatch(pbx, /config\.xml/, 'Xcode não deve referenciar config.xml legado/inexistente');
+  assert.match(pbx, /capacitor\.config\.json in Resources/, 'Xcode deve empacotar capacitor.config.json');
+
   const infoPlist = await readFile(new URL('../ios/App/App/Info.plist', import.meta.url), 'utf8');
   assert.match(infoPlist, /<key>CFBundleDisplayName<\/key>\s*<string>Diario<\/string>/, 'nome na Home Screen deve ser Diario');
 
