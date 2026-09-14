@@ -47,7 +47,7 @@ test('Novos textos do Assistente existem em português, inglês e espanhol', () 
     'assistant.searchMedication','assistant.newSchedule','assistant.editSchedule','assistant.timing',
     'assistant.summary','assistant.totalDoses','assistant.lastDose','assistant.endsAt',
     'assistant.active','assistant.upcoming','assistant.completed','assistant.noSchedules',
-    'assistant.nextDose','assistant.noNextDose','assistant.scheduledAnalysis','assistant.scheduledBadge'
+    'assistant.nextDose','assistant.fromLabel','assistant.untilLabel','assistant.nextDoseLabel','assistant.noNextDose','assistant.scheduledAnalysis','assistant.scheduledBadge'
   ];
   for (const locale of ['pt-BR','en-US','es-ES']) {
     for (const key of keys) assert.equal(typeof catalog?.[locale]?.[key], 'string', `${locale}: ${key}`);
@@ -86,12 +86,29 @@ test('Agendamentos exibem intervalo ao lado do nome e progresso como fração', 
   const block = app.slice(app.indexOf('function renderSchedules()'), app.indexOf('function renderReminderToggle()'));
   assert.match(block, /assistente-schedule-interval/);
   assert.match(block, /\$\{p\.taken\}\/\$\{p\.planned\}/);
-  assert.match(block, /assistant\.nextDose/);
+  assert.match(block, /assistant\.fromLabel/);
+  assert.match(block, /assistant\.untilLabel/);
+  assert.match(block, /assistant\.nextDoseLabel/);
+  assert.match(block, /assistente-schedule-period-line/);
+  assert.match(block, /assistente-schedule-meta-label/);
   assert.match(block, /assistente-schedule-next/);
+  assert.doesNotMatch(block, /→/);
   assert.doesNotMatch(block, /assistant\.ofPlanned/);
 });
 
 test('confirmação de baixa antecipada está localizada nos três idiomas', () => {
   const keys=['assistant.linkScheduleTitle','assistant.linkScheduleCopy','assistant.linkScheduleConfirm','assistant.keepEventual'];
   for (const locale of ['pt-BR','en-US','es-ES']) for (const key of keys) assert.equal(typeof catalog?.[locale]?.[key], 'string', `${locale}: ${key}`);
+});
+
+test('rótulos de período e próxima dose são localizados nos três idiomas', () => {
+  assert.equal(catalog['pt-BR']['assistant.fromLabel'], 'de');
+  assert.equal(catalog['pt-BR']['assistant.untilLabel'], 'até');
+  assert.equal(catalog['pt-BR']['assistant.nextDoseLabel'], 'Próxima dose');
+  assert.equal(catalog['en-US']['assistant.fromLabel'], 'from');
+  assert.equal(catalog['en-US']['assistant.untilLabel'], 'until');
+  assert.equal(catalog['en-US']['assistant.nextDoseLabel'], 'Next dose');
+  assert.equal(catalog['es-ES']['assistant.fromLabel'], 'de');
+  assert.equal(catalog['es-ES']['assistant.untilLabel'], 'hasta');
+  assert.equal(catalog['es-ES']['assistant.nextDoseLabel'], 'Próxima dosis');
 });

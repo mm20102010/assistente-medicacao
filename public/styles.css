@@ -2296,7 +2296,7 @@ body.mm-registro--assistente .assistente-history-row .record-main>span{
 }
 
 /* Schedule summary: interval stays beside the medicine and progress is a compact fraction. */
-body.mm-registro--assistente .assistente-schedule-row .record-main strong{
+body.mm-registro--assistente .assistente-schedule-row .record-main > strong{
   display:flex;
   align-items:baseline;
   gap:5px;
@@ -2367,4 +2367,18 @@ body.mm-registro--assistente .assistente-schedule-next{
   color:var(--muted);
   font-size:.94em;
   font-weight:650;
+}
+
+
+/* Assistente 1.0 — período do agendamento em linhas e rótulos enfatizados. */
+body.mm-registro--assistente .assistente-schedule-row .record-main .assistente-schedule-meta-label{
+  display:inline;
+  font:inherit;
+  font-weight:700;
+  color:inherit;
+  overflow:visible;
+  overflow-wrap:normal;
+}
+body.mm-registro--assistente .assistente-schedule-period-line{
+  display:block;
 }

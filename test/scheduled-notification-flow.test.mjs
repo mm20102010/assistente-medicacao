@@ -16,9 +16,24 @@ test('lembrete iPhone transporta contexto exato da dose e captura toque em app a
   assert.match(delegate, /UNUserNotificationCenterDelegate/);
   assert.match(delegate, /identifier: "MEDICATION_SCHEDULED"/);
   assert.match(delegate, /MedicationNotificationContextStore\.shared\.store/);
-  assert.match(delegate, /response\.notification\.request\.content\.userInfo/);
+  assert.match(delegate, /request: response\.notification\.request/);
   assert.match(scene, /connectionOptions\.notificationResponse/);
   assert.match(scene, /MedicationNotificationContextStore\.shared\.store/);
+  assert.match(delegate, /identifier\.hasPrefix\("medsched\."\)/);
+  assert.match(delegate, /suffix\.lastIndex\(of: "\."\)/);
+  assert.match(delegate, /request\.content\.title/);
+  assert.match(delegate, /isoString\(fromMilliseconds:/);
+});
+
+test('fallback nativo reconstrói a dose pelo identifier medsched mesmo sem userInfo', async () => {
+  const app = await read('public/app.js');
+  const delegate = await read('ios/App/App/AppDelegate.swift');
+  assert.match(app, /id:`medsched\.\$\{o\.scheduleId\}\.\$\{o\.at\.getTime\(\)\}`/);
+  assert.match(delegate, /fallbackContext\(from request: UNNotificationRequest\)/);
+  assert.match(delegate, /String\(identifier\.dropFirst\("medsched\."\.count\)\)/);
+  assert.match(delegate, /let scheduleID = String\(suffix\[\.\.<separator\]\)/);
+  assert.match(delegate, /let milliseconds = Int64\(millisecondsRaw\)/);
+  assert.match(delegate, /"scheduledAt": String\(isoString\(fromMilliseconds: milliseconds\)\.prefix\(64\)\)/);
 });
 
 test('ponte iOS expõe contexto de notificação ao WebView e emite evento de abertura', async () => {
@@ -40,6 +55,7 @@ test('foreground faz recuperação durável do contexto da notificação mesmo s
   assert.match(app, /window\.addEventListener\('focus'/);
   assert.match(app, /document\.addEventListener\('visibilitychange'/);
   assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED/);
+  assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_EMPTY/);
   const initStart = app.indexOf('async function init()');
   const initBlock = app.slice(initStart, app.indexOf('document.addEventListener("DOMContentLoaded", init)', initStart));
   assert.ok(initBlock.indexOf('refreshEntryMedicineDefault()') < initBlock.indexOf('recoverScheduledMedicationNotificationContext({ retry:true })'), 'contexto da notificação deve ser aplicado depois do default normal da Home');

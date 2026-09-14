@@ -858,7 +858,10 @@ async function applyScheduledNotificationContext(context) {
 async function consumeScheduledMedicationNotificationContext() {
   if (!window.MMNative?.isIOS || typeof window.MMNative?.consumeScheduledMedicationNotificationContext !== 'function') return false;
   const context=await window.MMNative.consumeScheduledMedicationNotificationContext();
-  if (!context) return false;
+  if (!context) {
+    diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_EMPTY');
+    return false;
+  }
   diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED', {
     medicine:cleanField(context.medicine).slice(0,80),
     scheduleId:cleanField(context.scheduleId).slice(0,100),
@@ -3247,10 +3250,10 @@ function renderSchedules() {
       <div class="history-day-card">${items.map(({schedule,r})=>{
         const p=scheduleProgress(schedule);
         const next=nextPendingScheduleOccurrence(schedule,now);
-        const nextLabel=next ? tr('assistant.nextDose',{time:formatScheduleDate(next.at)}) : (key==='done' ? tr('assistant.noNextDose') : '');
+        const nextValue=next ? formatScheduleDate(next.at) : '';
         return `<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
           <span class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
-          <span class="record-main"><strong>${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span>${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span>${nextLabel?`<span class="assistente-schedule-next">${escapeHtml(nextLabel)}</span>`:''}</span>
+          <span class="record-main"><strong class="assistente-schedule-title">${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span class="assistente-schedule-period-line"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.fromLabel'))}</strong>: ${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))}</span><span class="assistente-schedule-period-line"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.untilLabel'))}</strong>: ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span>${nextValue?`<span class="assistente-schedule-next"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.nextDoseLabel'))}</strong>: ${escapeHtml(nextValue)}</span>`:(key==='done'?`<span class="assistente-schedule-next">${escapeHtml(tr('assistant.noNextDose'))}</span>`:'')}</span>
           <span class="assistente-schedule-progress"><strong>${p.taken}/${p.planned}</strong></span>
         </button>`;
       }).join('')}</div>

@@ -11,18 +11,56 @@ final class MedicationNotificationContextStore {
 
     private init() {}
 
-    func store(userInfo: [AnyHashable: Any]) {
-        guard (userInfo["type"] as? String) == "scheduledMedication" else { return }
+    private func isoString(fromMilliseconds milliseconds: Int64) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000.0)
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
+
+    private func fallbackContext(from request: UNNotificationRequest) -> [String: String]? {
+        let identifier = request.identifier
+        guard identifier.hasPrefix("medsched.") else { return nil }
+
+        let suffix = String(identifier.dropFirst("medsched.".count))
+        guard let separator = suffix.lastIndex(of: ".") else { return nil }
+        let scheduleID = String(suffix[..<separator]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let millisecondsRaw = String(suffix[suffix.index(after: separator)...])
+        guard !scheduleID.isEmpty, let milliseconds = Int64(millisecondsRaw) else { return nil }
+
+        let medicine = request.content.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !medicine.isEmpty else { return nil }
+
+        return [
+            "medicine": String(medicine.prefix(80)),
+            "scheduleId": String(scheduleID.prefix(100)),
+            "scheduledAt": String(isoString(fromMilliseconds: milliseconds).prefix(64))
+        ]
+    }
+
+    private func context(from request: UNNotificationRequest) -> [String: String]? {
+        let userInfo = request.content.userInfo
+        let type = String(userInfo["type"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let medicine = String(userInfo["medicine"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let scheduleID = String(userInfo["scheduleId"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let scheduledAt = String(userInfo["scheduledAt"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !medicine.isEmpty, !scheduleID.isEmpty, !scheduledAt.isEmpty else { return }
 
-        let context = [
-            "medicine": String(medicine.prefix(80)),
-            "scheduleId": String(scheduleID.prefix(100)),
-            "scheduledAt": String(scheduledAt.prefix(64))
-        ]
+        if type == "scheduledMedication", !medicine.isEmpty, !scheduleID.isEmpty, !scheduledAt.isEmpty {
+            return [
+                "medicine": String(medicine.prefix(80)),
+                "scheduleId": String(scheduleID.prefix(100)),
+                "scheduledAt": String(scheduledAt.prefix(64))
+            ]
+        }
+
+        // Durable fallback for already-delivered notifications created by an
+        // older build: the request identifier has always carried scheduleId +
+        // occurrence timestamp, and the title carries the medicine name.
+        return fallbackContext(from: request)
+    }
+
+    func store(request: UNNotificationRequest) {
+        guard let context = context(from: request) else { return }
 
         lock.lock()
         pendingContext = context
@@ -88,7 +126,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         defer { completionHandler() }
         guard response.actionIdentifier != UNNotificationDismissActionIdentifier else { return }
         MedicationNotificationContextStore.shared.store(
-            userInfo: response.notification.request.content.userInfo
+            request: response.notification.request
         )
     }
 

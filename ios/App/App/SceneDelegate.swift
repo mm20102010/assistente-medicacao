@@ -9,7 +9,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         if let response = connectionOptions.notificationResponse {
             MedicationNotificationContextStore.shared.store(
-                userInfo: response.notification.request.content.userInfo
+                request: response.notification.request
             )
         }
 
