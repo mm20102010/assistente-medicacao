@@ -60,7 +60,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D5048654302B968200E91836"
             BuildableName = "Assistente Watch Watch App.app"
-            BlueprintName = "Assistente Watch Watch App"
             ReferencedContainer = "container:App.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -77,13 +76,15 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D5048654302B968200E91836"
             BuildableName = "Assistente Watch Watch App.app"
-            BlueprintName = "Assistente Watch Watch App"
             ReferencedContainer = "container:App.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
-   <AnalyzeAction buildConfiguration = "Debug">
+   <AnalyzeAction
+      buildConfiguration = "Debug">
    </AnalyzeAction>
-   <ArchiveAction buildConfiguration = "Release" revealArchiveInOrganizer = "YES">
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

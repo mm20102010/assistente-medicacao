@@ -9,7 +9,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         if let response = connectionOptions.notificationResponse {
             MedicationNotificationContextStore.shared.store(
-                request: response.notification.request
+                request: response.notification.request,
+                source: "scene-connect"
             )
         }
 
@@ -18,6 +19,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+    }
+
+    private func ensureNotificationDelegate() {
+        (UIApplication.shared.delegate as? AppDelegate)?.ensureNotificationDelegate()
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        ensureNotificationDelegate()
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        ensureNotificationDelegate()
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        ensureNotificationDelegate()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        ensureNotificationDelegate()
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {

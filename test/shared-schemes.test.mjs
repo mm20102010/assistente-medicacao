@@ -20,4 +20,14 @@ test('schemes compartilhados do iPhone e Watch ficam versionados', async () => {
 
   assert.match(complications, /BlueprintIdentifier = "E40300000000000000000006"/);
   assert.match(complications, /BuildableName = "Assistente Watch Complications\.appex"/);
+
+  // Xcode 27 normaliza o scheme principal para 1.3 e inclui Testables vazio.
+  // Manter esta forma evita que apenas abrir o projeto deixe o Git sujo.
+  assert.match(app, /version = "1\.3"/);
+  assert.match(app, /<Testables>[\s\S]*<\/Testables>/);
+
+  // No scheme do Watch, Xcode 27 preserva BlueprintName no BuildAction,
+  // mas o remove das referências de Launch/Profile. Portanto deve haver
+  // exatamente uma ocorrência do nome do target no XML inteiro.
+  assert.equal((watch.match(/BlueprintName = "Assistente Watch Watch App"/g) || []).length, 1);
 });

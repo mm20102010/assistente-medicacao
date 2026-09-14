@@ -147,12 +147,26 @@
     if (!watchPlugin?.consumeScheduledMedicationNotificationContext) return null;
     try {
       const result = await watchPlugin.consumeScheduledMedicationNotificationContext();
-      if (!result?.available) return null;
+      if (!result?.available) return {
+        available:false,
+        delegateType:String(result?.delegateType||'').trim().slice(0,160),
+        applicationState:String(result?.applicationState??'').trim().slice(0,16)
+      };
       const context = {
         medicine:String(result?.medicine||'').replace(/\s+/g,' ').trim().slice(0,80),
         scheduleId:String(result?.scheduleId||'').trim().slice(0,100),
         scheduledAt:String(result?.scheduledAt||'').trim().slice(0,64)
       };
+      const capturedAt=String(result?.capturedAt||'').trim().slice(0,64);
+      const captureSource=String(result?.captureSource||'').trim().slice(0,40);
+      const requestIdentifier=String(result?.requestIdentifier||'').trim().slice(0,180);
+      const delegateType=String(result?.delegateType||'').trim().slice(0,160);
+      const applicationState=String(result?.applicationState??'').trim().slice(0,16);
+      if (capturedAt) context.capturedAt=capturedAt;
+      if (captureSource) context.captureSource=captureSource;
+      if (requestIdentifier) context.requestIdentifier=requestIdentifier;
+      if (delegateType) context.delegateType=delegateType;
+      if (applicationState) context.applicationState=applicationState;
       return context.medicine && context.scheduleId && context.scheduledAt ? context : null;
     } catch(error) {
       console.warn('Não foi possível recuperar o contexto do lembrete aberto:',error);

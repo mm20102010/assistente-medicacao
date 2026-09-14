@@ -143,3 +143,81 @@ test('intervalo do agendamento aceita até 248 horas e rejeita 249', () => {
   assert.ok(val(ctx,'sanitizeScheduleRevision(__ok)'));
   assert.equal(val(ctx,'sanitizeScheduleRevision(__bad)'),null);
 });
+
+test('contexto exato da notificação de Kaloba substitui Dipirona que estava como default na Home', async () => {
+  const ctx=makeContext();
+  ctx.document.createElement=()=>({value:'',textContent:''});
+  const at='2026-09-14T19:05:00.000Z';
+  const end='2026-09-14T22:05:00.000Z';
+  const r=rev({medicine:'Kaloba',start:at,end,effective:at,interval:60});
+  setState(ctx,{records:[],medicines:['Dipirona','Kaloba'],schedules:[schedule([r])],remindersEnabled:true});
+  const select={innerHTML:'',value:'Dipirona',children:[],appendChild(option){this.children.push(option)}};
+  ctx.__select=select;
+  vm.runInContext('els.entryMedicine=__select; els.entryDateTime=null;',ctx);
+  const applied=await val(ctx,`applyScheduledNotificationContext({medicine:'Kaloba',scheduleId:'s1',scheduledAt:'${at}'})`);
+  assert.equal(applied,true);
+  assert.equal(select.value,'Kaloba');
+  assert.equal(val(ctx,'pendingScheduledNotificationContext.medicine'),'Kaloba');
+  assert.equal(val(ctx,'pendingScheduledNotificationContext.scheduleId'),'s1');
+});
+
+test('análise agendada separa previstas, vencidas, adesão, prazo, adiantadas, atrasadas e futuras', () => {
+  const ctx=makeContext();
+  const start='2026-09-14T10:00:00.000Z';
+  const end='2026-09-14T16:00:00.000Z';
+  const localFields = iso => {
+    const d=new Date(iso); const pad=n=>String(n).padStart(2,'0');
+    return {date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`};
+  };
+  const records=[
+    {id:'on',medicine:'Kaloba',...localFields('2026-09-14T10:05:00.000Z'),relief:'Não definido',scheduleId:'s1',scheduledAt:'2026-09-14T10:00:00.000Z'},
+    {id:'early',medicine:'Kaloba',...localFields('2026-09-14T10:20:00.000Z'),relief:'Não definido',scheduleId:'s1',scheduledAt:'2026-09-14T11:00:00.000Z'},
+    {id:'late',medicine:'Kaloba',...localFields('2026-09-14T12:45:00.000Z'),relief:'Não definido',scheduleId:'s1',scheduledAt:'2026-09-14T12:00:00.000Z'}
+  ];
+  setState(ctx,{records,medicines:['Kaloba'],schedules:[schedule([rev({medicine:'Kaloba',start,end,effective:start,interval:60})])],remindersEnabled:true});
+  const stats=JSON.parse(JSON.stringify(val(ctx,`scheduledDoseDetailedStats(new Date('2026-09-14T09:59:59.000Z'),new Date('2026-09-14T16:00:00.000Z'),new Date('2026-09-14T13:30:00.000Z'))`)));
+  assert.equal(stats.medicineCount,1);
+  assert.equal(stats.planned,6);
+  assert.equal(stats.due,4);
+  assert.equal(stats.taken,3);
+  assert.equal(stats.takenDue,3);
+  assert.equal(stats.onTime,1);
+  assert.equal(stats.early,1);
+  assert.equal(stats.late,1);
+  assert.equal(stats.missed,1);
+  assert.equal(stats.futurePending,2);
+  assert.equal(stats.adherence,75);
+  assert.equal(stats.punctuality,33);
+  assert.equal(Math.round(stats.avgDeviationMinutes),30);
+  assert.equal(stats.medicines[0].name,'Kaloba');
+});
+
+test('detalhamento dos planejados está localizado em português, inglês e espanhol e entra na exportação', () => {
+  const i18n=fs.readFileSync(new URL('../public/i18n.js', import.meta.url),'utf8');
+  for (const key of ['assistant.scheduledMedicines','assistant.dueDoses','assistant.overdueUnrecorded','assistant.pendingFutureDoses','assistant.earlyDoses','assistant.lateDoses','assistant.punctuality','assistant.avgDeviation','assistant.scheduledBreakdown','assistant.scheduledMethodNote']) {
+    assert.ok((i18n.match(new RegExp(`"${key.replaceAll('.', '\\.') }"`,'g'))||[]).length>=3,`${key} deve existir nos três idiomas`);
+  }
+  assert.match(source,/function scheduledAnalysisHtml\(stats\)/);
+  assert.match(source,/assistant\.scheduledBreakdown/);
+  assert.match(source,/makeAnalysisImageFile[\s\S]*?assistant\.plannedDoses[\s\S]*?assistant\.punctuality/);
+});
+
+test('Análise dos agendados considera o tratamento completo, inclusive doses futuras', () => {
+  const ctx=makeContext();
+  const start='2026-09-14T19:05:00.000Z';
+  const end='2026-09-21T19:05:00.000Z';
+  const r=rev({medicine:'Kaloba',start,end,effective:start,interval:60});
+  const d=new Date(start); const pad=n=>String(n).padStart(2,'0');
+  const record={id:'k1',medicine:'Kaloba',date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`,relief:'Não definido',scheduleId:'s1',scheduledAt:start};
+  setState(ctx,{records:[record],medicines:['Kaloba'],schedules:[schedule([r])],remindersEnabled:true});
+  const bounds=val(ctx,'scheduledTreatmentBounds()');
+  assert.equal(bounds.start.toISOString(),start);
+  assert.equal(bounds.end.toISOString(),end);
+  const stats=JSON.parse(JSON.stringify(val(ctx,`scheduledDoseDetailedStats(scheduledTreatmentBounds().start, scheduledTreatmentBounds().end, new Date('2026-09-14T19:05:30.000Z'))`)));
+  assert.equal(stats.planned,168);
+  assert.equal(stats.due,1);
+  assert.equal(stats.taken,1);
+  assert.equal(stats.futurePending,167);
+  assert.equal(stats.adherence,100);
+  assert.equal(stats.punctuality,100);
+});

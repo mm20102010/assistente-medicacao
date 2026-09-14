@@ -2382,3 +2382,13 @@ body.mm-registro--assistente .assistente-schedule-row .record-main .assistente-s
 body.mm-registro--assistente .assistente-schedule-period-line{
   display:block;
 }
+
+/* Assistente - análise detalhada de medicamentos agendados */
+.assistente-analysis-grid--scheduled{grid-template-columns:repeat(2,minmax(0,1fr))}
+.assistente-analysis-subtitle{margin:18px 0 8px;font-size:.9rem;letter-spacing:.01em}
+.assistente-analysis-breakdown{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.assistente-analysis-breakdown li{display:grid;gap:4px;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(166,196,231,.12)}
+.assistente-analysis-breakdown li strong{font-size:.9rem}
+.assistente-analysis-breakdown li span{font-size:.8rem;line-height:1.42;opacity:.78}
+.assistente-analysis-note{margin-top:12px}
+@media(min-width:700px){.assistente-analysis-grid--scheduled{grid-template-columns:repeat(3,minmax(0,1fr))}}

@@ -472,13 +472,97 @@ function repairNearScheduleAssociations() {
 }
 function scheduledDoseStats(start = new Date(new Date().setHours(0,0,0,0)), end = new Date(new Date().setHours(23,59,59,999))) {
   const occurrences = allScheduleOccurrences(start,end);
-  const records = state.records.filter(r=>r.scheduleId && r.scheduledAt);
+  const recordsByOccurrence = new Map();
+  for (const record of state.records) {
+    const key=recordScheduledOccurrenceKey(record);
+    if (!key) continue;
+    const actual=recordDateObject(record);
+    if (!actual) continue;
+    if (!recordsByOccurrence.has(key)) recordsByOccurrence.set(key,actual);
+  }
   let taken=0,onTime=0;
   for (const occ of occurrences) {
-    const matches=records.filter(r=>r.scheduleId===occ.scheduleId && Math.abs(new Date(r.scheduledAt)-occ.at)<60000);
-    if (matches.length) { taken++; const best=matches.map(recordDateObject).filter(Boolean).sort((a,b)=>Math.abs(a-occ.at)-Math.abs(b-occ.at))[0]; if(best && Math.abs(best-occ.at)<=30*60000) onTime++; }
+    const actual=recordsByOccurrence.get(scheduledOccurrenceKey(occ.scheduleId,occ.at));
+    if (!actual) continue;
+    taken++;
+    if (Math.abs(actual-occ.at)<=30*60000) onTime++;
   }
   return { planned:occurrences.length, taken, onTime, adherence:occurrences.length?Math.round(taken/occurrences.length*100):0, punctuality:taken?Math.round(onTime/taken*100):0 };
+}
+
+function scheduledTreatmentBounds() {
+  let min=Infinity, max=-Infinity;
+  for (const schedule of state.schedules) {
+    if (!schedule || schedule.status === 'cancelled') continue;
+    for (const revision of schedule.revisions || []) {
+      const start=new Date(revision.planStartAt), effective=new Date(revision.effectiveFrom), end=new Date(revision.endAt);
+      if ([start,effective,end].some(value=>Number.isNaN(value.getTime()))) continue;
+      const segmentStart=Math.max(start.getTime(),effective.getTime());
+      if (end.getTime()<=segmentStart) continue;
+      min=Math.min(min,segmentStart);
+      max=Math.max(max,end.getTime());
+    }
+  }
+  return Number.isFinite(min) && Number.isFinite(max) ? {start:new Date(min),end:new Date(max)} : null;
+}
+
+function scheduledDoseDetailedStats(start, end, now = new Date()) {
+  const occurrences = allScheduleOccurrences(start,end);
+  const recordsByOccurrence = new Map();
+  for (const record of state.records) {
+    const key=recordScheduledOccurrenceKey(record);
+    if (!key) continue;
+    const actual=recordDateObject(record);
+    if (!actual) continue;
+    const scheduledAt=new Date(record.scheduledAt);
+    const existing=recordsByOccurrence.get(key);
+    if (!existing || Math.abs(actual-scheduledAt)<Math.abs(existing.actual-scheduledAt)) {
+      recordsByOccurrence.set(key,{record,actual});
+    }
+  }
+
+  const base=()=>({planned:0,due:0,taken:0,takenDue:0,onTime:0,early:0,late:0,missed:0,futurePending:0,futureTaken:0,absoluteDeviationTotal:0,measuredTaken:0});
+  const total=base();
+  const medicines=new Map();
+  const ensureMedicine=name=>{
+    const key=normalizeKey(name);
+    if(!medicines.has(key)) medicines.set(key,{name,...base()});
+    return medicines.get(key);
+  };
+
+  for (const occ of occurrences) {
+    const bucket=ensureMedicine(occ.medicine);
+    total.planned++; bucket.planned++;
+    const due=occ.at.getTime()<=now.getTime();
+    if (due) { total.due++; bucket.due++; }
+    const match=recordsByOccurrence.get(scheduledOccurrenceKey(occ.scheduleId,occ.at));
+    if (!match) {
+      if (due) { total.missed++; bucket.missed++; }
+      else { total.futurePending++; bucket.futurePending++; }
+      continue;
+    }
+
+    total.taken++; bucket.taken++;
+    if (due) { total.takenDue++; bucket.takenDue++; }
+    else { total.futureTaken++; bucket.futureTaken++; }
+
+    const deltaMinutes=(match.actual.getTime()-occ.at.getTime())/60000;
+    const absolute=Math.abs(deltaMinutes);
+    total.absoluteDeviationTotal+=absolute; total.measuredTaken++;
+    bucket.absoluteDeviationTotal+=absolute; bucket.measuredTaken++;
+    if (absolute<=30) { total.onTime++; bucket.onTime++; }
+    else if (deltaMinutes<0) { total.early++; bucket.early++; }
+    else { total.late++; bucket.late++; }
+  }
+
+  const finalize=value=>({
+    ...value,
+    adherence:value.due?Math.round(value.takenDue/value.due*100):0,
+    punctuality:value.taken?Math.round(value.onTime/value.taken*100):0,
+    avgDeviationMinutes:value.measuredTaken?value.absoluteDeviationTotal/value.measuredTaken:null
+  });
+  const byMedicine=[...medicines.values()].map(finalize).sort((a,b)=>b.planned-a.planned||a.name.localeCompare(b.name,'pt-BR'));
+  return {...finalize(total),medicines:byMedicine,medicineCount:byMedicine.length};
 }
 function medicationProjectionForWatch() {
   const now=new Date(), horizon=new Date(now.getTime()+72*3600000);
@@ -858,14 +942,22 @@ async function applyScheduledNotificationContext(context) {
 async function consumeScheduledMedicationNotificationContext() {
   if (!window.MMNative?.isIOS || typeof window.MMNative?.consumeScheduledMedicationNotificationContext !== 'function') return false;
   const context=await window.MMNative.consumeScheduledMedicationNotificationContext();
-  if (!context) {
-    diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_EMPTY');
+  if (!context || context.available === false) {
+    diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_EMPTY', {
+      delegateType:cleanField(context?.delegateType).slice(0,160),
+      applicationState:cleanField(context?.applicationState).slice(0,16)
+    });
     return false;
   }
   diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED', {
     medicine:cleanField(context.medicine).slice(0,80),
     scheduleId:cleanField(context.scheduleId).slice(0,100),
-    scheduledAt:cleanField(context.scheduledAt).slice(0,64)
+    scheduledAt:cleanField(context.scheduledAt).slice(0,64),
+    capturedAt:cleanField(context.capturedAt).slice(0,64),
+    captureSource:cleanField(context.captureSource).slice(0,40),
+    requestIdentifier:cleanField(context.requestIdentifier).slice(0,180),
+    delegateType:cleanField(context.delegateType).slice(0,160),
+    applicationState:cleanField(context.applicationState).slice(0,16)
   });
   return applyScheduledNotificationContext(context);
 }
@@ -1568,6 +1660,10 @@ function computeAnalysisData(recordsInput = state.records) {
   const peakEntries = peakEntry ? sortedDailyUse.filter(([, count]) => count === peakEntry[1]) : [];
   const multiUseDays = [...activeDates.values()].filter(count => count > 1).length;
   const totalRecords = records.length;
+  const scheduledBounds = scheduledTreatmentBounds();
+  const scheduled = scheduledBounds
+    ? scheduledDoseDetailedStats(scheduledBounds.start, scheduledBounds.end, new Date())
+    : scheduledDoseDetailedStats(new Date(0), new Date(0), new Date());
 
   const notes = [];
   if (!totalRecords) {
@@ -1599,6 +1695,7 @@ function computeAnalysisData(recordsInput = state.records) {
     noReliefTotal,
     undefinedTotal,
     textOnlyTotal,
+    scheduled,
     notes,
     periodLabel: tr('range.between',{start:isoToLocalDate(start),end:isoToLocalDate(end)})
   };
@@ -1651,7 +1748,47 @@ function analysisLines(summary) {
   if (summary.improved.length) evolution.push(tr('analysis.improvement', { value:summary.improved.slice(0, 3).map(item => `${item.name} (${formatMinutesHuman(item.trend.before)} → ${formatMinutesHuman(item.trend.after)})`).join(', ') }));
   if (summary.worsened.length) evolution.push(tr('analysis.worsening', { value:summary.worsened.slice(0, 3).map(item => `${item.name} (${formatMinutesHuman(item.trend.before)} → ${formatMinutesHuman(item.trend.after)})`).join(', ') }));
   if (!evolution.length) evolution.push(summary.totalRecords ? tr('analysis.noTrend') : tr('analysis.noTrendData'));
-  return { overview, top, relief, evolution, notes:summary.notes };
+
+  const scheduled = [];
+  const scheduledStats=summary.scheduled || {planned:0,medicines:[]};
+  if (!scheduledStats.planned) {
+    scheduled.push(tr('assistant.scheduledNoPlans'));
+  } else {
+    scheduled.push(tr('assistant.scheduledSummaryLine', {
+      medicines:scheduledStats.medicineCount,
+      planned:scheduledStats.planned,
+      due:scheduledStats.due,
+      taken:scheduledStats.taken,
+      onTime:scheduledStats.onTime,
+      missed:scheduledStats.missed,
+      future:scheduledStats.futurePending
+    }));
+    for (const item of scheduledStats.medicines) {
+      scheduled.push(tr('assistant.scheduledMedicineDetail', {
+        medicine:item.name,
+        taken:item.taken,
+        planned:item.planned,
+        due:item.due,
+        onTime:item.onTime,
+        early:item.early,
+        late:item.late,
+        missed:item.missed,
+        future:item.futurePending,
+        adherence:`${item.adherence}%`,
+        punctuality:`${item.punctuality}%`
+      }));
+    }
+    scheduled.push(tr('assistant.scheduledMethodNote'));
+  }
+  return { overview, top, relief, evolution, scheduled, notes:summary.notes };
+}
+
+function scheduledAnalysisHtml(stats) {
+  if (!stats?.planned) return `<section class="analysis-card assistente-analysis-adherence"><h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><p class="analysis-empty">${escapeHtml(tr('assistant.scheduledNoPlans'))}</p></section>`;
+  const pct=value=>`${Math.max(0,Math.min(100,Number(value)||0))}%`;
+  const deviation=stats.avgDeviationMinutes==null?'—':formatMinutesHuman(stats.avgDeviationMinutes);
+  const details=stats.medicines.map(item=>`<li><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(tr('assistant.scheduledMedicineDetail',{medicine:item.name,taken:item.taken,planned:item.planned,due:item.due,onTime:item.onTime,early:item.early,late:item.late,missed:item.missed,future:item.futurePending,adherence:pct(item.adherence),punctuality:pct(item.punctuality)}).replace(`${item.name}: `,''))}</span></li>`).join('');
+  return `<section class="analysis-card assistente-analysis-adherence"><h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.analysisHelp'))}</p><div class="assistente-analysis-grid assistente-analysis-grid--scheduled"><div><span>${escapeHtml(tr('assistant.scheduledMedicines'))}</span><strong>${stats.medicineCount}</strong></div><div><span>${escapeHtml(tr('assistant.plannedDoses'))}</span><strong>${stats.planned}</strong></div><div><span>${escapeHtml(tr('assistant.dueDoses'))}</span><strong>${stats.due}</strong></div><div><span>${escapeHtml(tr('assistant.recordedDoses'))}</span><strong>${stats.taken}</strong></div><div><span>${escapeHtml(tr('assistant.adherence'))}</span><strong>${pct(stats.adherence)}</strong></div><div><span>${escapeHtml(tr('assistant.punctuality'))}</span><strong>${pct(stats.punctuality)}</strong></div><div><span>${escapeHtml(tr('assistant.onTime'))}</span><strong>${stats.onTime}</strong></div><div><span>${escapeHtml(tr('assistant.overdueUnrecorded'))}</span><strong>${stats.missed}</strong></div><div><span>${escapeHtml(tr('assistant.earlyDoses'))}</span><strong>${stats.early}</strong></div><div><span>${escapeHtml(tr('assistant.lateDoses'))}</span><strong>${stats.late}</strong></div><div><span>${escapeHtml(tr('assistant.pendingFutureDoses'))}</span><strong>${stats.futurePending}</strong></div><div><span>${escapeHtml(tr('assistant.avgDeviation'))}</span><strong>${escapeHtml(deviation)}</strong></div></div><h5 class="assistente-analysis-subtitle">${escapeHtml(tr('assistant.scheduledBreakdown'))}</h5><ul class="assistente-analysis-breakdown">${details}</ul><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.scheduledMethodNote'))}</p></section>`;
 }
 
 function renderAnalysisPreview() {
@@ -1660,19 +1797,10 @@ function renderAnalysisPreview() {
   const summary = computeAnalysisData();
   lastAnalysisSummary = summary;
   const lines = analysisLines(summary);
+  const hasScheduled=Boolean(summary.scheduled?.planned);
 
-  if (!state.records.length) {
-    els.analysisPreview.innerHTML = `<div class="analysis-card"><p class="analysis-empty">${escapeHtml(tr('analysis.empty'))}</p></div>`;
-    if (els.analysisImageBtn) els.analysisImageBtn.disabled = true;
-    return;
-  }
-
-  if (!summary.totalRecords) {
-    els.analysisPreview.innerHTML = `
-      <div class="analysis-card">
-        <h4>${escapeHtml(tr('analysis.noRecordsPeriod'))}</h4>
-        <p class="analysis-empty">${escapeHtml(tr('analysis.noRecordsBetween', { start:isoToLocalDate(summary.start), end:isoToLocalDate(summary.end) }))}</p>
-      </div>`;
+  if (!state.records.length && !hasScheduled) {
+    els.analysisPreview.innerHTML = `<div class="analysis-card"><p class="analysis-empty">${escapeHtml(tr('analysis.empty'))}</p></div>${scheduledAnalysisHtml(summary.scheduled)}`;
     if (els.analysisImageBtn) els.analysisImageBtn.disabled = true;
     return;
   }
@@ -1683,37 +1811,46 @@ function renderAnalysisPreview() {
       <ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
     </section>`;
 
-  const fastest = summary.fastest[0] || null;
-  els.analysisPreview.innerHTML = `
-    <div class="analysis-summary-grid">
-      <section class="analysis-stat-card">
-        <span>${escapeHtml(tr('analysis.period'))}</span>
-        <strong>${escapeHtml(`${summary.periodDays} ${tr(summary.periodDays === 1 ? 'analysis.days.one' : 'analysis.days.other')}`)}</strong>
-        <small>${escapeHtml(summary.periodLabel)}</small>
-      </section>
-      <section class="analysis-stat-card">
-        <span>${escapeHtml(tr('analysis.avgUse'))}</span>
-        <strong>${escapeHtml(formatCountPerDay(summary.overallAvgPerDay))}</strong>
-        <small>${summary.totalRecords} ${escapeHtml(tr(summary.totalRecords === 1 ? 'count.record.one' : 'count.record.other'))}</small>
-      </section>
-      <section class="analysis-stat-card">
-        <span>${escapeHtml(tr('analysis.mostUsed'))}</span>
-        <strong>${escapeHtml(summary.topMedicines[0]?.name || "—")}</strong>
-        <small>${summary.topMedicines[0] ? tr('analysis.uses', { count:summary.topMedicines[0].count }) : tr('analysis.noDataShort')}</small>
-      </section>
-      <section class="analysis-stat-card">
-        <span>${escapeHtml(tr('analysis.fastestRelief'))}</span>
-        <strong>${escapeHtml(fastest?.name || "—")}</strong>
-        <small>${escapeHtml(fastest ? formatMinutesHuman(fastest.avgReliefMinutes) : tr('analysis.noDataShort'))}</small>
-      </section>
-    </div>
-    ${sectionHtml(tr('analysis.overview'), lines.overview)}
-    ${sectionHtml(tr('analysis.topMedicines'), lines.top)}
-    ${sectionHtml(tr('analysis.reliefQuality'), lines.relief)}
-    ${sectionHtml(tr('analysis.evolution'), lines.evolution)}
-    ${sectionHtml(tr('analysis.methodNotes'), lines.notes)}
-  `;
-  if (els.analysisImageBtn) els.analysisImageBtn.disabled = false;
+  let traditional='';
+  if (!summary.totalRecords) {
+    traditional = `
+      <div class="analysis-card">
+        <h4>${escapeHtml(tr('analysis.noRecordsPeriod'))}</h4>
+        <p class="analysis-empty">${escapeHtml(tr('analysis.noRecordsBetween', { start:isoToLocalDate(summary.start), end:isoToLocalDate(summary.end) }))}</p>
+      </div>`;
+  } else {
+    const fastest = summary.fastest[0] || null;
+    traditional = `
+      <div class="analysis-summary-grid">
+        <section class="analysis-stat-card">
+          <span>${escapeHtml(tr('analysis.period'))}</span>
+          <strong>${escapeHtml(`${summary.periodDays} ${tr(summary.periodDays === 1 ? 'analysis.days.one' : 'analysis.days.other')}`)}</strong>
+          <small>${escapeHtml(summary.periodLabel)}</small>
+        </section>
+        <section class="analysis-stat-card">
+          <span>${escapeHtml(tr('analysis.avgUse'))}</span>
+          <strong>${escapeHtml(formatCountPerDay(summary.overallAvgPerDay))}</strong>
+          <small>${summary.totalRecords} ${escapeHtml(tr(summary.totalRecords === 1 ? 'count.record.one' : 'count.record.other'))}</small>
+        </section>
+        <section class="analysis-stat-card">
+          <span>${escapeHtml(tr('analysis.mostUsed'))}</span>
+          <strong>${escapeHtml(summary.topMedicines[0]?.name || "—")}</strong>
+          <small>${summary.topMedicines[0] ? tr('analysis.uses', { count:summary.topMedicines[0].count }) : tr('analysis.noDataShort')}</small>
+        </section>
+        <section class="analysis-stat-card">
+          <span>${escapeHtml(tr('analysis.fastestRelief'))}</span>
+          <strong>${escapeHtml(fastest?.name || "—")}</strong>
+          <small>${escapeHtml(fastest ? formatMinutesHuman(fastest.avgReliefMinutes) : tr('analysis.noDataShort'))}</small>
+        </section>
+      </div>
+      ${sectionHtml(tr('analysis.overview'), lines.overview)}
+      ${sectionHtml(tr('analysis.topMedicines'), lines.top)}
+      ${sectionHtml(tr('analysis.reliefQuality'), lines.relief)}
+      ${sectionHtml(tr('analysis.evolution'), lines.evolution)}
+      ${sectionHtml(tr('analysis.methodNotes'), lines.notes)}`;
+  }
+  els.analysisPreview.innerHTML = `${traditional}${scheduledAnalysisHtml(summary.scheduled)}`;
+  if (els.analysisImageBtn) els.analysisImageBtn.disabled = !(summary.totalRecords || hasScheduled);
 }
 
 function wrapCanvasText(ctx, text, maxWidth) {
@@ -1743,7 +1880,7 @@ function wrapCanvasText(ctx, text, maxWidth) {
 }
 
 async function makeAnalysisImageFile(summary = lastAnalysisSummary) {
-  if (!summary || !summary.totalRecords) throw new Error(tr('analysis.noDataError'));
+  if (!summary || (!summary.totalRecords && !summary.scheduled?.planned)) throw new Error(tr('analysis.noDataError'));
   const lines = analysisLines(summary);
   const width = 1080;
   const margin = 54;
@@ -1757,7 +1894,8 @@ async function makeAnalysisImageFile(summary = lastAnalysisSummary) {
     { title:tr('analysis.topMedicines'), lines:lines.top },
     { title:tr('analysis.reliefQuality'), lines:lines.relief },
     { title:tr('analysis.evolution'), lines:lines.evolution },
-    { title:tr('analysis.methodNotes'), lines:lines.notes }
+    { title:tr('analysis.methodNotes'), lines:lines.notes },
+    { title:tr('assistant.scheduledAnalysis'), lines:lines.scheduled }
   ].map(section => ({
     ...section,
     prepared: []
@@ -1775,13 +1913,20 @@ async function makeAnalysisImageFile(summary = lastAnalysisSummary) {
     { label:tr('analysis.mostUsed'), value: summary.topMedicines[0]?.name || "—", note: summary.topMedicines[0] ? tr('analysis.uses', { count:summary.topMedicines[0].count }) : tr('analysis.noDataShort') },
     { label:tr('analysis.fastestRelief'), value: summary.fastest[0] ? `${summary.fastest[0].name}` : tr('analysis.noDataShort'), note: summary.fastest[0] ? formatMinutesHuman(summary.fastest[0].avgReliefMinutes) : "" }
   ];
+  if (summary.scheduled?.planned) metrics.push(
+    { label:tr('assistant.plannedDoses'), value:String(summary.scheduled.planned), note:`${summary.scheduled.medicineCount} ${tr('assistant.scheduledMedicines').toLowerCase()}` },
+    { label:tr('assistant.recordedDoses'), value:String(summary.scheduled.taken), note:`${summary.scheduled.due} ${tr('assistant.dueDoses').toLowerCase()}` },
+    { label:tr('assistant.adherence'), value:`${summary.scheduled.adherence}%`, note:`${summary.scheduled.missed} ${tr('assistant.overdueUnrecorded').toLowerCase()}` },
+    { label:tr('assistant.punctuality'), value:`${summary.scheduled.punctuality}%`, note:`${summary.scheduled.onTime} ${tr('assistant.onTime').toLowerCase()}` }
+  );
 
   const headerHeight = 210;
   const metricW = (cardWidth - 14) / 2;
   ctx.font = `700 31px ${EXPORT_FONT_SERIF}`;
   for (const metric of metrics) metric.valueLines = wrapCanvasText(ctx, metric.value, metricW - 48);
   const metricH = 98 + Math.max(...metrics.map(metric => metric.valueLines.length)) * 32;
-  const metricsHeight = metricH * 2 + 14;
+  const metricRows = Math.ceil(metrics.length / 2);
+  const metricsHeight = metricH * metricRows + 14 * Math.max(0, metricRows - 1);
   const bodyHeight = sections.reduce((sum, section) => sum + section.height, 0) + cardGap * (sections.length - 1);
   const footerHeight = 84;
   const height = margin + headerHeight + 28 + metricsHeight + 26 + bodyHeight + footerHeight + margin;
@@ -1881,7 +2026,7 @@ async function makeAnalysisImageFile(summary = lastAnalysisSummary) {
 async function exportAnalysisImage(button = null) {
   renderAnalysisPreview();
   const summary = lastAnalysisSummary;
-  if (!summary?.totalRecords) {
+  if (!summary?.totalRecords && !summary?.scheduled?.planned) {
     showToast(tr('analysis.noPeriodToast'));
     return;
   }
@@ -3274,18 +3419,8 @@ async function reconcileMedicationNotifications(){
     scheduledAt:o.at.toISOString()
   })),state.remindersEnabled!==false);
 }
-function renderAdherenceAnalysis(){
-  if(!els.analysisPreview||!els.analysisPreview.isConnected)return;
-  els.analysisPreview.querySelector('.assistente-analysis-adherence')?.remove();
-  const start=analysisSelection.start?new Date(`${analysisSelection.start}T00:00:00`):new Date(0);
-  const end=analysisSelection.end?new Date(`${analysisSelection.end}T23:59:59`):new Date();
-  const stats=scheduledDoseStats(start,end);
-  if(!stats.planned)return;
-  const box=document.createElement('section');
-  box.className='analysis-card assistente-analysis-adherence';
-  box.innerHTML=`<h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><div class="assistente-analysis-grid"><div><span>${escapeHtml(tr('assistant.plannedDoses'))}</span><strong>${stats.planned}</strong></div><div><span>${escapeHtml(tr('assistant.recordedDoses'))}</span><strong>${stats.taken}</strong></div><div><span>${escapeHtml(tr('assistant.adherence'))}</span><strong>${stats.adherence}%</strong></div><div><span>${escapeHtml(tr('assistant.onTime'))}</span><strong>${stats.punctuality}%</strong></div></div><p class="analysis-empty">${escapeHtml(tr('assistant.analysisHelp'))}</p>`;
-  els.analysisPreview.appendChild(box);
-}
+function renderAdherenceAnalysis(){ /* integrado a renderAnalysisPreview para manter tela e exportação consistentes */ }
+
 function bindEvents() {
   els.homeScheduleBtn?.addEventListener('click',()=>openScheduleDialog());
   els.homeMedicinesBtn?.addEventListener('click',openMedicineManager);

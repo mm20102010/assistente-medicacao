@@ -147,3 +147,41 @@ test('Home mantém maior respiro e centralização vertical levemente elevada', 
   assert.match(css, /body\.mm-registro--assistente \.tab-panel__register-wrap\s*\{[\s\S]*?gap:\s*28px[\s\S]*?justify-content:\s*center[\s\S]*?padding-bottom:\s*clamp\(34px,5\.5vh,62px\)/);
   assert.match(css, /body\.mm-registro--assistente \.tab-panel__register-wrap \.assistente-home-actions\s*\{[\s\S]*?gap:\s*18px/);
 });
+
+test('contexto do toque no iPhone é durável e sobrevive ao timing da WebView', async () => {
+  const delegate = await read('ios/App/App/AppDelegate.swift');
+  assert.match(delegate, /persistedContextKey\s*=\s*"mm\.assistente\.pendingScheduledMedicationContext\.v2"|persistedContextKey\s*=\s*"mm\.assistente\.pendingScheduledNotificationContext\.v2"/);
+  assert.match(delegate, /UserDefaults\.standard\.set\(context, forKey: persistedContextKey\)/);
+  assert.match(delegate, /validPersistedContextLocked\(\)/);
+  assert.match(delegate, /maxContextAge:\s*TimeInterval\s*=\s*15 \* 60/);
+  assert.match(delegate, /pendingContext \?\? validPersistedContextLocked\(\)/);
+  assert.match(delegate, /UserDefaults\.standard\.removeObject\(forKey: persistedContextKey\)/);
+});
+
+test('delegate de notificações é reassumido após o bridge Capacitor e em transições de lifecycle', async () => {
+  const delegate = await read('ios/App/App/AppDelegate.swift');
+  const scene = await read('ios/App/App/SceneDelegate.swift');
+  const bridge = await read('ios/App/App/WatchSessionManager.swift');
+
+  assert.match(delegate, /func ensureNotificationDelegate\(\)[\s\S]*?UNUserNotificationCenter\.current\(\)\.delegate = self/);
+  for (const callback of ['applicationWillResignActive','applicationDidEnterBackground','applicationWillEnterForeground','applicationDidBecomeActive']) {
+    assert.match(delegate, new RegExp(`func ${callback}\\([\\s\\S]*?ensureNotificationDelegate\\(\\)`));
+  }
+  assert.match(bridge, /override func capacitorDidLoad\(\)[\s\S]*?AppDelegate\)\?\.ensureNotificationDelegate\(\)[\s\S]*?registerPluginInstance/);
+  for (const callback of ['sceneWillResignActive','sceneDidEnterBackground','sceneWillEnterForeground','sceneDidBecomeActive']) {
+    assert.match(scene, new RegExp(`func ${callback}\\([\\s\\S]*?ensureNotificationDelegate\\(\\)`));
+  }
+});
+
+test('diagnóstico do contexto informa origem, request e delegate se o problema físico reaparecer', async () => {
+  const ios = await read('ios/App/App/WatchSessionManager.swift');
+  const runtime = await read('public/native-runtime.js');
+  const app = await read('public/app.js');
+  assert.match(ios, /"capturedAt": context\["capturedAt"\]/);
+  assert.match(ios, /"captureSource": context\["captureSource"\]/);
+  assert.match(ios, /"requestIdentifier": context\["requestIdentifier"\]/);
+  assert.match(ios, /"delegateType": delegateType/);
+  assert.match(runtime, /delegateType:String\(result\?\.delegateType/);
+  assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_EMPTY[\s\S]*?delegateType/);
+  assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED[\s\S]*?captureSource[\s\S]*?requestIdentifier[\s\S]*?delegateType/);
+});

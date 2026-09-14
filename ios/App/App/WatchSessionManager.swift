@@ -554,15 +554,28 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func consumeScheduledMedicationNotificationContext(_ call: CAPPluginCall) {
+        let delegateType = UNUserNotificationCenter.current().delegate.map {
+            String(reflecting: type(of: $0))
+        } ?? "nil"
+        let applicationState = UIApplication.shared.applicationState.rawValue
         guard let context = MedicationNotificationContextStore.shared.consume() else {
-            call.resolve(["available": false])
+            call.resolve([
+                "available": false,
+                "delegateType": delegateType,
+                "applicationState": applicationState
+            ])
             return
         }
         call.resolve([
             "available": true,
             "medicine": context["medicine"] ?? "",
             "scheduleId": context["scheduleId"] ?? "",
-            "scheduledAt": context["scheduledAt"] ?? ""
+            "scheduledAt": context["scheduledAt"] ?? "",
+            "capturedAt": context["capturedAt"] ?? "",
+            "captureSource": context["captureSource"] ?? "",
+            "requestIdentifier": context["requestIdentifier"] ?? "",
+            "delegateType": delegateType,
+            "applicationState": applicationState
         ])
     }
 
@@ -608,6 +621,11 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
 // Registers the local plugin as soon as Capacitor finishes loading its bridge.
 final class AssistenteBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
+        // Capacitor has finished configuring its bridge at this point. Reassert
+        // the app notification delegate after that setup so a plugin cannot
+        // silently replace the scheduled-medication tap handler.
+        (UIApplication.shared.delegate as? AppDelegate)?.ensureNotificationDelegate()
+
         let watchPlugin = AssistenteWatchPlugin()
         bridge?.registerPluginInstance(watchPlugin)
 
