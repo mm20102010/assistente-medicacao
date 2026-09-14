@@ -23,7 +23,7 @@
       <header class="mm-primary-header mm-app-header">
               <div class="mm-primary-header__inner">
                 <div class="mm-primary-header__title">
-                  <div class="eyebrow">DIÁRIO PESSOAL</div>
+                  <div class="eyebrow" data-i18n="app.eyebrow">REGISTRO DE MEDICAÇÃO</div>
                   <h1>Assistente de Medicação</h1>
                   <div class="mm-primary-header__status"><p id="statusLine">Carregando…</p></div>
                 </div>
@@ -34,8 +34,16 @@
             </header>
       <div class="tab-panel__register-wrap">
         <section class="assistente-home-actions" aria-label="Ações rápidas">
-          <button id="homeScheduleBtn" class="primary-btn" type="button">Agendar medicamento</button>
-          <button id="homeMedicinesBtn" class="secondary-btn" type="button">Gerenciar remédios</button>
+          <button id="homeScheduleBtn" class="assistente-home-action liquid-button mm-card" type="button">
+            <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
+            <span class="assistente-home-action__copy"><strong data-i18n="assistant.scheduleAction">Agendar medicamento</strong><small data-i18n="assistant.homeScheduleDesc">Criar uma rotina recorrente</small></span>
+            <b aria-hidden="true">›</b>
+          </button>
+          <button id="homeMedicinesBtn" class="assistente-home-action liquid-button mm-card" type="button">
+            <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#medicine"></use></svg></span>
+            <span class="assistente-home-action__copy"><strong data-i18n="tools.medicines">Gerenciar remédios</strong><small data-i18n="tools.medicinesDesc">Adicionar, reordenar, renomear ou excluir</small></span>
+            <b aria-hidden="true">›</b>
+          </button>
         </section>
         <section class="panel new-entry mm-card">
           <div class="section-heading">
@@ -106,11 +114,11 @@
     <section id="tabSchedules" class="tab-panel mm-view-panel" data-tab-panel="schedules" data-mm-view-panel="schedules" hidden aria-label="Agendamentos">
       <header class="mm-secondary-header">
         <button class="mm-back-button liquid-button" type="button" aria-label="Voltar" data-mm-go-view="home"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
-        <div class="mm-secondary-header__title"><div class="eyebrow mm-app-name-label" data-mm-app-name-label></div><h2>Agendamentos</h2></div>
-        <div class="mm-secondary-header__action"><button id="newScheduleBtn" class="mm-header-action liquid-button" type="button"><span>Novo</span></button></div>
+        <div class="mm-secondary-header__title"><div class="eyebrow mm-app-name-label" data-mm-app-name-label></div><h2 data-i18n="assistant.schedules">Agendamentos</h2></div>
+        <div class="mm-secondary-header__action"><button id="newScheduleBtn" class="mm-header-action liquid-button" type="button"><span data-i18n="assistant.new">Novo</span></button></div>
       </header>
       <section class="more-screen-body assistente-schedules-body">
-        <div class="search-wrap"><span class="mm-search-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#search"></use></svg></span><input id="scheduleSearchInput" type="search" placeholder="Buscar remédio" autocomplete="off"></div>
+        <div class="search-wrap assistente-schedule-search"><span class="mm-search-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#search"></use></svg></span><input id="scheduleSearchInput" type="search" placeholder="Buscar remédio" data-i18n-placeholder="assistant.searchMedication" autocomplete="off"></div>
         <section id="schedulesList" class="assistente-schedules-list" aria-live="polite"></section>
       </section>
     </section>
@@ -134,7 +142,11 @@
         <section class="settings-group">
           <h3>Lembretes</h3>
           <div class="menu-list more-menu-list">
-            <label class="menu-item assistente-toggle-row"><span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#history"></use></svg></span><div><strong>Ativar lembretes</strong><small>Receber avisos nos horários programados</small></div><input id="remindersToggle" type="checkbox" role="switch"></label>
+            <label class="assistente-reminder-row">
+              <span class="mm-leading-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#bell"></use></svg></span>
+              <span class="assistente-reminder-copy"><strong data-i18n="assistant.enableReminders">Ativar lembretes</strong><small data-i18n="assistant.remindersDesc">Receber avisos nos horários programados</small></span>
+              <span class="assistente-switch"><input id="remindersToggle" type="checkbox" role="switch"><i aria-hidden="true"></i></span>
+            </label>
           </div>
         </section>
 
@@ -431,27 +443,40 @@
   <script src="native-runtime.js?v=1.0" defer></script>
   <script src="app.js?v=1.0" defer></script>
 
-  <dialog id="scheduleDialog" class="mm-dialog assistente-schedule-dialog">
-    <form method="dialog" class="assistente-schedule-form" id="scheduleForm">
-      <header class="mm-secondary-header">
-        <button id="scheduleCancelBtn" class="mm-back-button liquid-button" value="cancel" type="button" aria-label="Voltar"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#chevron-left"></use></svg></button>
-        <div class="mm-secondary-header__title"><div class="eyebrow">ASSISTENTE DE MEDICAÇÃO</div><h2 id="scheduleDialogTitle">Agendamento</h2></div>
-        <div class="mm-secondary-header__action"></div>
-      </header>
-      <div class="assistente-schedule-content">
-        <input id="scheduleId" type="hidden">
-        <label><span>Remédio</span><select id="scheduleMedicine" required></select></label>
-        <button id="scheduleManageMedicinesBtn" class="secondary-btn" type="button">Gerenciar remédios</button>
-        <div class="assistente-schedule-grid">
-          <label><span>Intervalo (horas)</span><input id="scheduleIntervalHours" type="number" min="1" max="168" step="1" value="8" required></label>
-          <label><span>Início</span><input id="scheduleStartAt" type="datetime-local" required></label>
-          <label><span>Prazo total (dias)</span><input id="scheduleDurationDays" type="number" min="1" max="365" step="1" value="7" required></label>
-        </div>
-        <section id="schedulePreview" class="panel mm-card assistente-schedule-preview"></section>
-        <button id="scheduleSaveBtn" class="primary-btn" type="submit">Salvar agendamento</button>
-        <button id="scheduleDeleteBtn" class="danger-btn" type="button" hidden>Excluir agendamento</button>
+  <aside id="scheduleDialog" class="mm-secondary-layer assistente-schedule-layer" data-mm-secondary-layer="schedule" aria-hidden="true" inert>
+    <section class="sheet mm-secondary-sheet assistente-schedule-sheet">
+      <div class="sheet-handle"></div>
+      <button id="scheduleCancelBtn" class="sheet-close liquid-button" data-mm-secondary-close type="button" aria-label="Fechar"><svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#close"></use></svg></button>
+      <div class="mm-secondary-sheet__heading">
+        <div class="sheet-kicker" data-i18n="assistant.kicker">ASSISTENTE DE MEDICAÇÃO</div>
+        <h2 id="scheduleDialogTitle">Novo agendamento</h2>
       </div>
-    </form>
-  </dialog>
+      <form class="assistente-schedule-form" id="scheduleForm">
+        <input id="scheduleId" type="hidden">
+
+        <section class="assistente-form-section">
+          <div class="assistente-form-section__heading"><strong data-i18n="field.medicine">Remédio</strong><small data-i18n="assistant.medicationSectionHelp">Escolha o remédio desta rotina.</small></div>
+          <label class="assistente-field-row assistente-field-row--stacked"><span data-i18n="field.medicine">Remédio</span><select id="scheduleMedicine" required></select></label>
+          <button id="scheduleManageMedicinesBtn" class="secondary-button liquid-button full assistente-manage-button" type="button" data-i18n="tools.medicines">Gerenciar remédios</button>
+        </section>
+
+        <section class="assistente-form-section">
+          <div class="assistente-form-section__heading"><strong data-i18n="assistant.timing">Horários</strong><small data-i18n="assistant.timingHelp">Defina o intervalo, o início e a duração do tratamento.</small></div>
+          <div class="assistente-schedule-grid">
+            <label class="assistente-field-row"><span data-i18n="assistant.intervalHours">Intervalo (horas)</span><input id="scheduleIntervalHours" type="number" min="1" max="168" step="1" value="8" required inputmode="numeric"></label>
+            <label class="assistente-field-row assistente-field-row--stacked"><span data-i18n="assistant.start">Início</span><input id="scheduleStartAt" type="datetime-local" required></label>
+            <label class="assistente-field-row"><span data-i18n="assistant.durationDays">Prazo total (dias)</span><input id="scheduleDurationDays" type="number" min="1" max="365" step="1" value="7" required inputmode="numeric"></label>
+          </div>
+        </section>
+
+        <section id="schedulePreview" class="assistente-form-section assistente-schedule-preview" aria-live="polite"></section>
+
+        <div class="assistente-schedule-actions">
+          <button id="scheduleSaveBtn" class="primary-btn" type="submit" data-i18n="assistant.saveSchedule">Salvar agendamento</button>
+          <button id="scheduleDeleteBtn" class="danger-outline-btn" type="button" hidden data-i18n="assistant.deleteSchedule">Excluir agendamento</button>
+        </div>
+      </form>
+    </section>
+  </aside>
 </body>
 </html>

@@ -1,34 +1,72 @@
 {
-  "sourceLanguage" : "pt",
-  "strings" : {
-    "complication.icon.accessibility" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant. Tap to open the app." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente de Medicación. Toca para abrir la app." } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente de Medicação. Toque para abrir o app." } }
+  "sourceLanguage": "pt",
+  "strings": {
+    "complication.status.accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d doses taken. Next medication in %3$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d de %2$d dosis tomadas. Próximo medicamento en %3$@."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d de %2$d doses tomadas. Próximo medicamento em %3$@."
+          }
+        }
       }
     },
-    "complication.icon.description" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant icon. Tap to open the app." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Icono del Asistente de Medicación. Toca para abrir la app." } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Ícone do Assistente de Medicação. Toque para abrir o app." } }
+    "complication.status.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's doses and time until the next scheduled medication."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosis de hoy y tiempo hasta el próximo medicamento programado."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doses de hoje e tempo até o próximo medicamento agendado."
+          }
+        }
       }
     },
-    "complication.icon.inline" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Diary" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente" } }
-      }
-    },
-    "complication.icon.name" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Medication Assistant · Icon" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Asistente · Icono" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Assistente · Ícone" } }
+    "complication.status.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medication Assistant"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de Medicación"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistente de Medicação"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

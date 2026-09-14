@@ -82,6 +82,11 @@ private struct AssistenteStatusView: View {
         return "\(minutes / 60)h"
     }
 
+    private var accessibilitySummary: String {
+        let format = String(localized: "complication.status.accessibility")
+        return String(format: format, locale: Locale.current, entry.taken, entry.planned, countdownLabel)
+    }
+
     var body: some View {
         Gauge(value: progress) {
             EmptyView()
@@ -89,13 +94,13 @@ private struct AssistenteStatusView: View {
             VStack(spacing: 0) {
                 Text(countdownLabel)
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                Text("\(entry.taken)/\(entry.planned)")
+                Text(verbatim: "\(entry.taken)/\(entry.planned)")
                     .font(.system(size: 8, weight: .semibold, design: .rounded))
             }
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .containerBackground(for: .widget) { Color.clear }
-        .accessibilityLabel("\(entry.taken) de \(entry.planned) doses. Próxima em \(countdownLabel)")
+        .accessibilityLabel(Text(verbatim: accessibilitySummary))
     }
 }
 
@@ -106,8 +111,8 @@ private struct AssistenteStatusComplication: Widget {
         StaticConfiguration(kind: kind, provider: AssistenteProvider()) { entry in
             AssistenteStatusView(entry: entry)
         }
-        .configurationDisplayName("Assistente")
-        .description("Progresso das doses e próxima medicação")
+        .configurationDisplayName(String(localized: "complication.status.name"))
+        .description(String(localized: "complication.status.description"))
         .supportedFamilies([.accessoryCircular])
     }
 }

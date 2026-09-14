@@ -1914,3 +1914,311 @@ html[data-mm-runtime="native"] #installSheet{
 
 /* Assistente de Medicação */
 .assistente-home-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}.secondary-btn{appearance:none;border:1px solid rgba(166,196,231,.32);background:rgba(255,255,255,.06);color:inherit;border-radius:14px;padding:12px 14px;font-weight:700}.assistente-schedules-body{display:grid;gap:14px}.assistente-schedules-list{display:grid;gap:18px}.assistente-schedule-section>h3{margin:0 0 8px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;opacity:.65}.assistente-schedule-card{display:grid;gap:6px;padding:14px 16px;border:1px solid rgba(166,196,231,.18);border-radius:18px;background:rgba(255,255,255,.045);cursor:pointer}.assistente-schedule-card strong{font-size:1rem}.assistente-schedule-card small{opacity:.72}.assistente-schedule-progress{display:flex;justify-content:space-between;gap:10px;font-size:.84rem}.assistente-toggle-row{cursor:pointer}.assistente-toggle-row input{margin-left:auto;transform:scale(1.15)}.assistente-schedule-dialog{width:min(720px,100%);height:min(900px,100%);max-width:none;max-height:none;padding:0;border:0;background:var(--bg,#07111c);color:inherit}.assistente-schedule-dialog::backdrop{background:rgba(0,0,0,.56)}.assistente-schedule-content{padding:18px;display:grid;gap:14px}.assistente-schedule-content label{display:grid;gap:7px}.assistente-schedule-content input,.assistente-schedule-content select{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid rgba(166,196,231,.22);background:rgba(255,255,255,.06);color:inherit}.assistente-schedule-grid{display:grid;grid-template-columns:1fr;gap:12px}.assistente-schedule-preview{display:grid;gap:8px}.assistente-preview-times{display:flex;gap:8px;flex-wrap:wrap}.assistente-preview-time{padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07)}.assistente-analysis-adherence{margin-top:16px}.assistente-analysis-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.assistente-analysis-grid>div{padding:12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(166,196,231,.15)}.assistente-analysis-grid span{display:block;font-size:.78rem;opacity:.65}.assistente-analysis-grid strong{font-size:1.2rem}.record-scheduled-badge{font-size:.72rem;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.08);margin-left:6px}.mm-tabbar{grid-template-columns:repeat(4,minmax(0,1fr))!important}@media(max-width:420px){.assistente-home-actions{grid-template-columns:1fr}.mm-tabbar__label{font-size:.65rem}.assistente-analysis-grid{grid-template-columns:1fr 1fr}}
+
+/* Assistente 1.0 — visual parity with Dentes/Diário and Apple-style grouped forms. */
+.assistente-home-actions{
+  width:100%;
+  margin:0 0 14px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.assistente-home-action{
+  appearance:none;
+  width:100%;
+  min-height:78px;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 20px;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid rgba(159,198,236,.22);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(28,55,82,.78),rgba(17,39,61,.74));
+  color:var(--text);
+  text-align:left;
+  box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.assistente-home-action>.mm-leading-icon{display:grid;place-items:center;width:42px;height:42px;color:#9dccff}
+.assistente-home-action>.mm-leading-icon .mm-icon{width:27px;height:27px}
+.assistente-home-action__copy{min-width:0;display:block}
+.assistente-home-action__copy strong,.assistente-home-action__copy small{display:block}
+.assistente-home-action__copy strong{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:17px;line-height:1.2;font-weight:650;color:#f5f7fb}
+.assistente-home-action__copy small{margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;line-height:1.35;font-weight:400;color:#aebdcd}
+.assistente-home-action>b{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:24px;font-weight:500;color:#91a5bb;text-align:right}
+
+/* Histórico compacto no mesmo padrão de lista agrupada do Dentes. */
+.records{display:block;gap:0}
+.records>.history-day,.assistente-schedules-list .history-day{
+  margin:20px 4px 9px;
+  color:#aeb8ca;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.25;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:capitalize;
+}
+.records>.history-day-card,.assistente-schedules-list .history-day-card{
+  overflow:hidden;
+  border:1px solid rgba(159,198,236,.18);
+  border-radius:22px;
+  background:rgba(255,255,255,.045);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.assistente-history-row,.assistente-schedule-row{
+  width:100%;
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:13px 15px;
+  border:0;
+  border-bottom:1px solid rgba(159,198,236,.15);
+  border-radius:0;
+  background:transparent;
+  color:#f3f7fb;
+  text-align:left;
+  box-shadow:none;
+  cursor:pointer;
+}
+.assistente-history-row:last-child,.assistente-schedule-row:last-child{border-bottom:0}
+.assistente-history-row:focus-visible,.assistente-schedule-row:focus-visible{outline:2px solid rgba(104,168,230,.75);outline-offset:-2px}
+.assistente-history-row .record-icon,.assistente-schedule-row .record-icon{
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:rgba(255,255,255,.075);
+  color:#9dccff;
+}
+.assistente-history-row .record-icon .mm-icon,.assistente-schedule-row .record-icon .mm-icon{width:23px;height:23px}
+.assistente-history-row .record-main,.assistente-schedule-row .record-main{flex:1;min-width:0}
+.assistente-history-row .record-main strong,.assistente-schedule-row .record-main strong{
+  display:block;
+  min-width:0;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:17px;
+  line-height:1.22;
+  font-weight:650;
+  color:#f4f7fb;
+  overflow-wrap:anywhere;
+}
+.assistente-history-row .record-main>span,.assistente-schedule-row .record-main>span{
+  display:block;
+  margin-top:4px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:13px;
+  line-height:1.35;
+  font-weight:400;
+  color:#aebdcd;
+}
+.assistente-history-row .record-main>span.undefined{color:#efc06a}
+.assistente-history-row .record-time{
+  flex:0 0 auto;
+  margin-left:8px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:600;
+  color:#aebdcd;
+  text-align:right;
+  white-space:nowrap;
+}
+.assistente-inline-action{
+  margin:7px 0 0;
+  padding:0;
+  min-height:0;
+  border:0;
+  background:transparent;
+  color:#9dccff;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:13px;
+  line-height:1.2;
+  font-weight:650;
+}
+.record-scheduled-badge{
+  display:inline-flex!important;
+  align-items:center;
+  margin:0 0 0 7px!important;
+  padding:2px 6px!important;
+  border-radius:999px;
+  background:rgba(104,168,230,.13)!important;
+  color:#a9d0f6!important;
+  font-size:10px!important;
+  font-weight:650!important;
+  vertical-align:2px;
+}
+.history-load-more{display:flex;justify-content:center;padding:16px 0 2px}
+.history-load-more .secondary-btn{min-height:46px;padding:10px 18px;font-size:14px;border-radius:16px}
+
+/* Agendamentos: lista agrupada visualmente igual ao Histórico. */
+.assistente-schedules-body{display:block;gap:0}
+.assistente-schedule-search{margin:0 0 8px}
+.assistente-schedules-list{display:block;gap:0}
+.assistente-schedule-section{margin:0}
+.assistente-schedule-section>h3{display:none}
+.assistente-schedule-row{appearance:none}
+.assistente-schedule-progress{
+  flex:0 0 74px;
+  margin-left:8px;
+  display:block;
+  text-align:right;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+.assistente-schedule-progress strong{display:block;font-size:18px;line-height:1.1;font-weight:700;color:#f4f7fb}
+.assistente-schedule-progress small{display:block;margin-top:3px;font-size:11px;line-height:1.25;font-weight:400;color:#9eafc1}
+
+/* Canonical secondary sheet for schedule creation/editing. */
+.assistente-schedule-sheet{scroll-padding-top:10px}
+.assistente-schedule-form{width:100%;margin:0 auto;padding:0 0 8px;display:grid;gap:14px}
+.assistente-form-section{
+  margin:0;
+  padding:16px 18px;
+  border:1px solid rgba(190,207,235,.13);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(34,50,72,.68),rgba(21,35,53,.62));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+}
+.assistente-form-section__heading{margin:0 0 13px}
+.assistente-form-section__heading strong,.assistente-form-section__heading small{display:block}
+.assistente-form-section__heading strong{
+  color:#f3f6fb;
+  font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  font-size:19px;
+  line-height:1.2;
+  font-weight:700;
+}
+.assistente-form-section__heading small{
+  margin-top:5px;
+  color:#aeb9ca;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:13px;
+  line-height:1.42;
+  font-weight:400;
+}
+.assistente-schedule-grid{display:grid;grid-template-columns:1fr;gap:0}
+.assistente-field-row{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,42%);
+  align-items:center;
+  gap:14px;
+  margin:0;
+  padding:12px 0;
+  border-top:1px solid rgba(190,207,235,.10);
+  color:#c4ccd8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.3;
+  font-weight:500;
+}
+.assistente-form-section>.assistente-field-row:first-of-type,.assistente-schedule-grid>.assistente-field-row:first-child{border-top:0}
+.assistente-field-row--stacked{grid-template-columns:1fr;gap:8px}
+.assistente-field-row>span{padding:0 2px}
+.assistente-field-row input,.assistente-field-row select{
+  width:100%;
+  min-width:0;
+  min-height:54px;
+  margin:0;
+  padding:0 13px;
+  border:1px solid rgba(168,201,233,.18);
+  border-radius:16px;
+  background:rgba(255,255,255,.055);
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:17px;
+  font-variant-numeric:tabular-nums;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.assistente-field-row input[type="number"]{text-align:center}
+.assistente-manage-button{width:100%;min-height:50px;margin-top:11px;font-size:16px;border-radius:17px}
+.assistente-schedule-preview{display:block}
+.assistente-preview-times{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.assistente-preview-time{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:6px 10px;
+  border:1px solid rgba(159,198,236,.13);
+  border-radius:999px;
+  background:rgba(255,255,255,.055);
+  color:#f1f5fa;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  font-size:15px;
+  font-variant-numeric:tabular-nums;
+}
+.assistente-preview-list{overflow:hidden;border-top:1px solid rgba(190,207,235,.10)}
+.assistente-preview-list>div{
+  min-height:50px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,56%);
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(190,207,235,.10);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+.assistente-preview-list>div:last-child{border-bottom:0}
+.assistente-preview-list span{font-size:14px;color:#aeb9ca}
+.assistente-preview-list strong{font-size:14px;line-height:1.35;font-weight:600;color:#f4f7fb;text-align:right;overflow-wrap:anywhere}
+.assistente-schedule-actions{display:grid;gap:10px;margin-top:2px}
+.assistente-schedule-actions .primary-btn,.assistente-schedule-actions .danger-outline-btn{width:100%;min-height:54px;font-size:17px;border-radius:18px}
+
+/* Tools reminder master control: same switch language as Dentes. */
+.assistente-reminder-row{
+  width:100%;
+  min-height:84px;
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr) 54px;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid rgba(159,198,236,.18);
+  border-radius:22px;
+  background:rgba(255,255,255,.045);
+  color:#f3f7fb;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+  cursor:pointer;
+}
+.assistente-reminder-row>.mm-leading-icon{display:grid;place-items:center;color:#9dccff}
+.assistente-reminder-row>.mm-leading-icon .mm-icon{width:25px;height:25px}
+.assistente-reminder-copy{min-width:0;display:block}
+.assistente-reminder-copy strong,.assistente-reminder-copy small{display:block;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+.assistente-reminder-copy strong{font-size:16px;line-height:1.22;font-weight:650;color:#f4f7fb}
+.assistente-reminder-copy small{margin-top:4px;font-size:13px;line-height:1.38;font-weight:400;color:#aebdcd}
+.assistente-switch{position:relative;display:block;width:54px;height:32px}
+.assistente-switch input{position:absolute;opacity:0;pointer-events:none}
+.assistente-switch i{display:block;width:54px;height:32px;border-radius:99px;background:#3a4653;position:relative;transition:.18s ease}
+.assistente-switch i:after{content:"";position:absolute;width:28px;height:28px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.24);transition:.18s ease}
+.assistente-switch input:checked+i{background:#4f8fcb}
+.assistente-switch input:checked+i:after{left:24px}
+.assistente-switch input:focus-visible+i{outline:3px solid rgba(104,168,230,.38);outline-offset:3px}
+
+@media(max-width:520px){
+  .assistente-home-action{min-height:74px;padding:13px 14px;grid-template-columns:38px minmax(0,1fr) 18px}
+  .assistente-home-action>.mm-leading-icon{width:38px;height:38px}
+  .assistente-history-row,.assistente-schedule-row{min-height:72px;padding:12px 13px;gap:11px}
+  .assistente-history-row .record-icon,.assistente-schedule-row .record-icon{flex-basis:38px;width:38px;height:38px;border-radius:13px}
+  .assistente-history-row .record-main strong,.assistente-schedule-row .record-main strong{font-size:16px}
+  .assistente-history-row .record-main>span,.assistente-schedule-row .record-main>span{font-size:12px}
+  .assistente-schedule-progress{flex-basis:64px}
+  .assistente-form-section{padding:15px 16px}
+  .assistente-field-row{grid-template-columns:1fr;gap:8px;padding:11px 0}
+  .assistente-preview-list>div{grid-template-columns:minmax(0,1fr);gap:3px}
+  .assistente-preview-list strong{text-align:left}
+  .assistente-reminder-row{grid-template-columns:36px minmax(0,1fr) 54px;padding:13px}
+}
+
+/* Home composition: actions belong above the record card, never beside it. */
+.tab-panel__register-wrap{
+  width:min(720px,100%);
+  margin:0 auto;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+}
+.tab-panel__register-wrap .assistente-home-actions,
+.tab-panel__register-wrap .new-entry{flex:0 0 auto;width:100%}

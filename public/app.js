@@ -1000,14 +1000,34 @@ function renderHistoryFilters() {
   renderFilterButtons();
 }
 
-function renderRecords() {
+function formatHistoryDay(dateValue) {
+  const iso = String(dateValue || "");
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!validDateParts(year, month, day)) return iso;
+  const label = new Intl.DateTimeFormat(I18N?.locale || 'pt-BR', { weekday:'long', day:'2-digit', month:'long' }).format(new Date(year, month - 1, day));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
 
+function historyRecordRow(record) {
+  const undefinedRelief = normalizeKey(record.relief) === normalizeKey(DEFAULT_RELIEF);
+  const scheduled = Boolean(record.scheduleId);
+  return `<div class="record-row assistente-history-row" data-id="${escapeHtml(record.id)}" role="button" tabindex="0">
+    <div class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#medicine"></use></svg></div>
+    <div class="record-main">
+      <strong>${escapeHtml(record.medicine)}${scheduled ? `<span class="record-scheduled-badge">${escapeHtml(tr('assistant.scheduledBadge'))}</span>` : ''}</strong>
+      <span class="${undefinedRelief ? "undefined" : ""}">${escapeHtml(tr('field.relief'))}: ${escapeHtml(localizedRelief(record.relief))}</span>
+      ${undefinedRelief ? `<button class="assistente-inline-action quick-relief" data-action="relief" type="button">${escapeHtml(tr('relief.inform'))}</button>` : ''}
+    </div>
+    <div class="record-time">${escapeHtml(formatTimeOnly(record))}</div>
+  </div>`;
+}
+
+function renderRecords() {
   const query = normalizeKey(els.searchInput.value);
   const hasFilter = !!query || filterSelections.history.dates.length > 0 || filterSelections.history.medicines.length > 0;
   if (els.historyFilterActions) els.historyFilterActions.hidden = !hasFilter;
 
   const filtered = getFilteredRecords("history");
-
   els.emptyState.hidden = state.records.length !== 0 || hasFilter;
 
   if (filtered.length === 0 && hasFilter) {
@@ -1016,21 +1036,16 @@ function renderRecords() {
   }
 
   const visible = filtered.slice(0, historyRenderLimit);
-  els.records.innerHTML = visible.map(record => {
-    const undefinedRelief = normalizeKey(record.relief) === normalizeKey(DEFAULT_RELIEF);
-    return `<article class="record" data-id="${escapeHtml(record.id)}">
-      <div class="record-main">
-        <div class="record-datetime"><span>${escapeHtml(formatDateOnly(record))}</span><span class="record-at">${escapeHtml(tr('time.at'))}</span><span class="record-time">${escapeHtml(formatTimeOnly(record))}</span></div>
-        <div class="record-med">${escapeHtml(record.medicine)}</div>
-        <div class="record-relief ${undefinedRelief ? "undefined" : ""}">${escapeHtml(tr('field.relief'))}: ${escapeHtml(localizedRelief(record.relief))}</div>
-      </div>
-      <div class="record-actions">
-        ${undefinedRelief ? `<button class="small-btn quick-relief" data-action="relief" type="button">${escapeHtml(tr('relief.inform'))}</button>` : ""}
-        <button class="small-btn" data-action="edit" type="button">${escapeHtml(tr('action.edit'))}</button>
-      </div>
-    </article>`;
-  }).join("") + (visible.length < filtered.length
-    ? `<button class="secondary-btn history-load-more" data-action="load-more" type="button">${escapeHtml(tr('history.loadMore', { count:Math.min(HISTORY_RENDER_BATCH, filtered.length - visible.length) }))}</button>`
+  const grouped = new Map();
+  for (const record of visible) {
+    if (!grouped.has(record.date)) grouped.set(record.date, []);
+    grouped.get(record.date).push(record);
+  }
+  const groups = [...grouped.entries()].map(([date, rows]) => `
+    <div class="history-day">${escapeHtml(formatHistoryDay(date))}</div>
+    <div class="history-day-card">${rows.map(historyRecordRow).join("")}</div>`).join("");
+  els.records.innerHTML = groups + (visible.length < filtered.length
+    ? `<div class="history-load-more"><button class="secondary-btn" data-action="load-more" type="button">${escapeHtml(tr('history.loadMore', { count:Math.min(HISTORY_RENDER_BATCH, filtered.length - visible.length) }))}</button></div>`
     : "");
 }
 
@@ -1845,7 +1860,8 @@ function closeSheet() {
 }
 
 function openMedicineManager() {
-  if (activeSheet) closeSheet();
+  const keepParentSheet = activeSheet === els.scheduleDialog;
+  if (activeSheet && !keepParentSheet) closeSheet();
   renderMedicinesList();
   const dialog = els.medicinesSheet;
   if (!dialog) return;
@@ -1865,7 +1881,7 @@ function closeMedicineManager() {
   if (!dialog) return;
   if (typeof dialog.close === 'function' && dialog.open) dialog.close();
   else dialog.removeAttribute('open');
-  setTabbarSuspended(false);
+  setTabbarSuspended(Boolean(activeSheet));
 }
 
 function confirmAction(title, text, options = {}) {
@@ -2876,31 +2892,139 @@ function scheduleFormValues() {
   const end=new Date(start.getTime()+days*86400000); return {medicine, intervalMinutes:Math.round(intervalHours*60), start, end, days};
 }
 function renderSchedulePreview() {
-  if(!els.schedulePreview) return; const v=scheduleFormValues(); if(!v){els.schedulePreview.innerHTML='<p>Preencha os campos para visualizar o agendamento.</p>';return;}
-  const count=Math.max(0,Math.ceil((v.end-v.start)/(v.intervalMinutes*60000))); const last=count?new Date(v.start.getTime()+(count-1)*v.intervalMinutes*60000):null;
-  const times=[]; const seen=new Set(); for(let i=0;i<Math.min(count,24);i++){const d=new Date(v.start.getTime()+i*v.intervalMinutes*60000); const key=`${pad2(d.getHours())}:${pad2(d.getMinutes())}`; if(!seen.has(key)){seen.add(key);times.push(key)} if(seen.size>=Math.ceil(1440/Math.min(v.intervalMinutes,1440))) break;}
-  els.schedulePreview.innerHTML=`<strong>Como ficará</strong><div class="assistente-preview-times">${times.map(t=>`<span class="assistente-preview-time">${escapeHtml(t)}</span>`).join('')}</div><div><strong>${count}</strong> doses</div><div>Última dose: <strong>${last?escapeHtml(formatScheduleDate(last)):'—'}</strong></div><div>Agendamento finaliza em: <strong>${escapeHtml(formatScheduleDate(v.end))}</strong></div>`;
+  if(!els.schedulePreview) return;
+  const v=scheduleFormValues();
+  if(!v){
+    els.schedulePreview.innerHTML=`<div class="assistente-form-section__heading"><strong>${escapeHtml(tr('assistant.summary'))}</strong><small>${escapeHtml(tr('assistant.previewFill'))}</small></div>`;
+    return;
+  }
+  const count=Math.max(0,Math.ceil((v.end-v.start)/(v.intervalMinutes*60000)));
+  const last=count?new Date(v.start.getTime()+(count-1)*v.intervalMinutes*60000):null;
+  const times=[]; const seen=new Set();
+  for(let i=0;i<Math.min(count,24);i++){
+    const d=new Date(v.start.getTime()+i*v.intervalMinutes*60000);
+    const key=`${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    if(!seen.has(key)){seen.add(key);times.push(key)}
+    if(seen.size>=Math.ceil(1440/Math.min(v.intervalMinutes,1440))) break;
+  }
+  els.schedulePreview.innerHTML=`
+    <div class="assistente-form-section__heading"><strong>${escapeHtml(tr('assistant.summary'))}</strong><small>${escapeHtml(tr('assistant.summaryHelp'))}</small></div>
+    <div class="assistente-preview-times" aria-label="${escapeHtml(tr('assistant.dailyTimes'))}">${times.map(t=>`<span class="assistente-preview-time">${escapeHtml(t)}</span>`).join('')}</div>
+    <div class="assistente-preview-list">
+      <div><span>${escapeHtml(tr('assistant.totalDoses'))}</span><strong>${escapeHtml(tr('assistant.doseCount',{count}))}</strong></div>
+      <div><span>${escapeHtml(tr('assistant.lastDose'))}</span><strong>${last?escapeHtml(formatScheduleDate(last)):'—'}</strong></div>
+      <div><span>${escapeHtml(tr('assistant.endsAt'))}</span><strong>${escapeHtml(formatScheduleDate(v.end))}</strong></div>
+    </div>`;
+}
+function closeScheduleSheet() {
+  if (activeSheet === els.scheduleDialog) closeSheet();
+  else if (els.scheduleDialog?.matches?.('[data-mm-secondary-layer]')) window.MMRegistro?.closeSecondarySheet?.(els.scheduleDialog);
 }
 function openScheduleDialog(scheduleId='') {
-  if(!els.scheduleDialog) return; renderMedicineSelects(); const schedule=state.schedules.find(s=>s.id===scheduleId); const revision=schedule?currentScheduleRevision(schedule):null;
-  els.scheduleId.value=schedule?.id||''; els.scheduleDialogTitle.textContent=schedule?'Editar agendamento':'Novo agendamento'; els.scheduleDeleteBtn.hidden=!schedule;
-  if(revision){els.scheduleMedicine.value=revision.medicine; els.scheduleIntervalHours.value=String(revision.intervalMinutes/60); const d=new Date(revision.planStartAt); els.scheduleStartAt.value=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; els.scheduleDurationDays.value=String(Math.max(1,Math.round((new Date(revision.endAt)-d)/86400000)));}
-  else {const d=new Date(); d.setSeconds(0,0); els.scheduleStartAt.value=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; els.scheduleIntervalHours.value='8'; els.scheduleDurationDays.value='7'; if(state.medicines[0])els.scheduleMedicine.value=state.medicines[0];}
-  renderSchedulePreview(); els.scheduleDialog.showModal();
+  if(!els.scheduleDialog) return;
+  renderMedicineSelects();
+  const schedule=state.schedules.find(s=>s.id===scheduleId);
+  const revision=schedule?currentScheduleRevision(schedule):null;
+  els.scheduleId.value=schedule?.id||'';
+  els.scheduleDialogTitle.textContent=schedule?tr('assistant.editSchedule'):tr('assistant.newSchedule');
+  els.scheduleDeleteBtn.hidden=!schedule;
+  if(revision){
+    els.scheduleMedicine.value=revision.medicine;
+    els.scheduleIntervalHours.value=String(revision.intervalMinutes/60);
+    const d=new Date(revision.planStartAt);
+    els.scheduleStartAt.value=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    els.scheduleDurationDays.value=String(Math.max(1,Math.round((new Date(revision.endAt)-d)/86400000)));
+  } else {
+    const d=new Date(); d.setSeconds(0,0);
+    els.scheduleStartAt.value=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    els.scheduleIntervalHours.value='8';
+    els.scheduleDurationDays.value='7';
+    if(state.medicines[0])els.scheduleMedicine.value=state.medicines[0];
+  }
+  renderSchedulePreview();
+  openSheet(els.scheduleDialog);
 }
 async function saveScheduleFromForm(event) {
-  event?.preventDefault?.(); const v=scheduleFormValues(); if(!v)return showToast('Preencha o agendamento corretamente.'); const now=new Date().toISOString(); const existing=state.schedules.find(s=>s.id===els.scheduleId.value);
+  event?.preventDefault?.();
+  const v=scheduleFormValues();
+  if(!v)return showToast(tr('assistant.invalidSchedule'));
+  const now=new Date().toISOString();
+  const existing=state.schedules.find(s=>s.id===els.scheduleId.value);
   const revision={id:makeId(),effectiveFrom:existing?now:v.start.toISOString(),medicine:v.medicine,intervalMinutes:v.intervalMinutes,planStartAt:v.start.toISOString(),endAt:v.end.toISOString()};
-  if(existing){existing.revisions.push(revision);existing.updatedAt=now;existing.status='active';} else state.schedules.push({id:makeId(),status:'active',createdAt:now,updatedAt:now,revisions:[revision]});
-  state.medicines=uniqueMedicines([...state.medicines,v.medicine]); await saveState({reason:existing?'edit-schedule':'add-schedule'}); els.scheduleDialog.close(); renderAll(); await reconcileMedicationNotifications(); showToast(existing?'Agendamento atualizado.':'Agendamento criado.');
+  if(existing){existing.revisions.push(revision);existing.updatedAt=now;existing.status='active';}
+  else state.schedules.push({id:makeId(),status:'active',createdAt:now,updatedAt:now,revisions:[revision]});
+  state.medicines=uniqueMedicines([...state.medicines,v.medicine]);
+  await saveState({reason:existing?'edit-schedule':'add-schedule'});
+  closeScheduleSheet();
+  renderAll();
+  await reconcileMedicationNotifications();
+  showToast(existing?tr('assistant.scheduleUpdated'):tr('assistant.scheduleCreated'));
 }
-async function deleteCurrentSchedule() { const schedule=state.schedules.find(s=>s.id===els.scheduleId.value); if(!schedule)return; const ok=confirm('Excluir este agendamento? O histórico de registros será preservado.'); if(!ok)return; schedule.status='cancelled';schedule.updatedAt=new Date().toISOString();await saveState({reason:'cancel-schedule'});els.scheduleDialog.close();renderAll();await reconcileMedicationNotifications();showToast('Agendamento excluído.'); }
-function scheduleProgress(schedule) { const rev=currentScheduleRevision(schedule); if(!rev)return {planned:0,taken:0}; const planned=scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date()).length; const taken=state.records.filter(r=>r.scheduleId===schedule.id).length; return {planned,taken}; }
-function renderSchedules() { if(!els.schedulesList)return; const query=normalizeKey(els.scheduleSearchInput?.value); const now=new Date(); const groups={active:[],upcoming:[],done:[]}; for(const schedule of state.schedules.filter(s=>s.status!=='cancelled')){const r=currentScheduleRevision(schedule,now)||schedule.revisions.at(-1); if(!r)continue; if(query&&!normalizeKey(r.medicine).includes(query))continue; const start=new Date(r.planStartAt),end=new Date(r.endAt); (start>now?groups.upcoming:end<=now?groups.done:groups.active).push({schedule,r});}
-  const labels={active:'Em andamento',upcoming:'Próximos',done:'Concluídos'}; els.schedulesList.innerHTML=Object.entries(groups).filter(([,items])=>items.length).map(([key,items])=>`<section class="assistente-schedule-section"><h3>${labels[key]}</h3>${items.map(({schedule,r})=>{const p=scheduleProgress(schedule);return `<button class="assistente-schedule-card" type="button" data-schedule-id="${escapeHtml(schedule.id)}"><strong>${escapeHtml(r.medicine)}</strong><small>A cada ${r.intervalMinutes/60}h • ${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</small><div class="assistente-schedule-progress"><span>${p.taken} registros</span><span>${p.planned} doses previstas até agora</span></div></button>`}).join('')}</section>`).join('') || '<div class="panel empty-state mm-card"><h2>Nenhum agendamento</h2><p>Crie o primeiro pelo botão Novo.</p></div>'; }
+async function deleteCurrentSchedule() {
+  const schedule=state.schedules.find(s=>s.id===els.scheduleId.value);
+  if(!schedule)return;
+  const ok=confirm(tr('assistant.deleteConfirm'));
+  if(!ok)return;
+  schedule.status='cancelled';
+  schedule.updatedAt=new Date().toISOString();
+  await saveState({reason:'cancel-schedule'});
+  closeScheduleSheet();
+  renderAll();
+  await reconcileMedicationNotifications();
+  showToast(tr('assistant.scheduleDeleted'));
+}
+function scheduleProgress(schedule) {
+  const rev=currentScheduleRevision(schedule);
+  if(!rev)return {planned:0,taken:0};
+  const planned=scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date()).length;
+  const taken=state.records.filter(r=>r.scheduleId===schedule.id).length;
+  return {planned,taken};
+}
+function renderSchedules() {
+  if(!els.schedulesList)return;
+  const query=normalizeKey(els.scheduleSearchInput?.value);
+  const now=new Date();
+  const groups={active:[],upcoming:[],done:[]};
+  for(const schedule of state.schedules.filter(s=>s.status!=='cancelled')){
+    const r=currentScheduleRevision(schedule,now)||schedule.revisions.at(-1);
+    if(!r)continue;
+    if(query&&!normalizeKey(r.medicine).includes(query))continue;
+    const start=new Date(r.planStartAt),end=new Date(r.endAt);
+    (start>now?groups.upcoming:end<=now?groups.done:groups.active).push({schedule,r});
+  }
+  const labels={active:tr('assistant.active'),upcoming:tr('assistant.upcoming'),done:tr('assistant.completed')};
+  els.schedulesList.innerHTML=Object.entries(groups).filter(([,items])=>items.length).map(([key,items])=>`
+    <section class="assistente-schedule-section">
+      <div class="history-day">${escapeHtml(labels[key])}</div>
+      <div class="history-day-card">${items.map(({schedule,r})=>{
+        const p=scheduleProgress(schedule);
+        return `<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
+          <span class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
+          <span class="record-main"><strong>${escapeHtml(r.medicine)}</strong><span>${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}))} · ${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span></span>
+          <span class="assistente-schedule-progress"><strong>${p.taken}</strong><small>${escapeHtml(tr('assistant.ofPlanned',{count:p.planned}))}</small></span>
+        </button>`;
+      }).join('')}</div>
+    </section>`).join('') || `<div class="panel empty-state mm-card"><h2>${escapeHtml(tr('assistant.noSchedules'))}</h2><p>${escapeHtml(tr('assistant.noSchedulesHelp'))}</p></div>`;
+}
 function renderReminderToggle(){if(els.remindersToggle)els.remindersToggle.checked=state.remindersEnabled!==false;}
-async function reconcileMedicationNotifications(){ if(!window.MMNative?.isIOS||typeof window.MMNative?.reconcileMedicationNotifications!=='function')return; const now=new Date(); const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now).slice(0,60); await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({id:`medsched.${o.scheduleId}.${o.at.getTime()}`,title:o.medicine,body:'Horário do medicamento agendado',at:o.at.toISOString()})),state.remindersEnabled!==false); }
-function renderAdherenceAnalysis(){ if(!els.analysisPreview||!els.analysisPreview.isConnected)return; els.analysisPreview.querySelector('.assistente-analysis-adherence')?.remove(); const start=analysisSelection.start?new Date(`${analysisSelection.start}T00:00:00`):new Date(0); const end=analysisSelection.end?new Date(`${analysisSelection.end}T23:59:59`):new Date(); const stats=scheduledDoseStats(start,end); if(!stats.planned)return; const box=document.createElement('section');box.className='analysis-card assistente-analysis-adherence';box.innerHTML=`<h4>Medicamentos agendados</h4><div class="assistente-analysis-grid"><div><span>Doses previstas</span><strong>${stats.planned}</strong></div><div><span>Doses registradas</span><strong>${stats.taken}</strong></div><div><span>Adesão</span><strong>${stats.adherence}%</strong></div><div><span>No horário (±30 min)</span><strong>${stats.punctuality}%</strong></div></div><p class="analysis-empty">A análise tradicional acima considera os registros eventuais; esta seção avalia separadamente os medicamentos recorrentes.</p>`;els.analysisPreview.appendChild(box); }
+async function reconcileMedicationNotifications(){
+  if(!window.MMNative?.isIOS||typeof window.MMNative?.reconcileMedicationNotifications!=='function')return;
+  const now=new Date();
+  const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now).slice(0,60);
+  await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({id:`medsched.${o.scheduleId}.${o.at.getTime()}`,title:o.medicine,body:tr('assistant.notificationBody'),at:o.at.toISOString()})),state.remindersEnabled!==false);
+}
+function renderAdherenceAnalysis(){
+  if(!els.analysisPreview||!els.analysisPreview.isConnected)return;
+  els.analysisPreview.querySelector('.assistente-analysis-adherence')?.remove();
+  const start=analysisSelection.start?new Date(`${analysisSelection.start}T00:00:00`):new Date(0);
+  const end=analysisSelection.end?new Date(`${analysisSelection.end}T23:59:59`):new Date();
+  const stats=scheduledDoseStats(start,end);
+  if(!stats.planned)return;
+  const box=document.createElement('section');
+  box.className='analysis-card assistente-analysis-adherence';
+  box.innerHTML=`<h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><div class="assistente-analysis-grid"><div><span>${escapeHtml(tr('assistant.plannedDoses'))}</span><strong>${stats.planned}</strong></div><div><span>${escapeHtml(tr('assistant.recordedDoses'))}</span><strong>${stats.taken}</strong></div><div><span>${escapeHtml(tr('assistant.adherence'))}</span><strong>${stats.adherence}%</strong></div><div><span>${escapeHtml(tr('assistant.onTime'))}</span><strong>${stats.punctuality}%</strong></div></div><p class="analysis-empty">${escapeHtml(tr('assistant.analysisHelp'))}</p>`;
+  els.analysisPreview.appendChild(box);
+}
 function bindEvents() {
   els.homeScheduleBtn?.addEventListener('click',()=>openScheduleDialog());
   els.homeMedicinesBtn?.addEventListener('click',openMedicineManager);
@@ -2909,7 +3033,7 @@ function bindEvents() {
   els.schedulesList?.addEventListener('click',e=>{const b=e.target.closest('[data-schedule-id]');if(b)openScheduleDialog(b.dataset.scheduleId);});
   ['scheduleMedicine','scheduleIntervalHours','scheduleStartAt','scheduleDurationDays'].forEach(id=>els[id]?.addEventListener('input',renderSchedulePreview));
   els.scheduleForm?.addEventListener('submit',saveScheduleFromForm);
-  els.scheduleCancelBtn?.addEventListener('click',()=>els.scheduleDialog.close());
+  els.scheduleCancelBtn?.addEventListener('click',closeScheduleSheet);
   els.scheduleDeleteBtn?.addEventListener('click',deleteCurrentSchedule);
   els.scheduleManageMedicinesBtn?.addEventListener('click',openMedicineManager);
   els.remindersToggle?.addEventListener('change',async e=>{state.remindersEnabled=Boolean(e.target.checked);await saveState({reason:'reminders-toggle'});await reconcileMedicationNotifications();});
@@ -2937,16 +3061,22 @@ function bindEvents() {
   els.medicineFilterBtn.addEventListener("click", () => openMultiFilterDialog("history", "medicines"));
   els.clearFiltersBtn.addEventListener("click", clearHistoryFilters);
   els.records.addEventListener("click", event => {
-    const button = event.target.closest("button[data-action]");
-    if (!button) return;
-    if (button.dataset.action === "load-more") {
+    const action = event.target.closest("button[data-action]");
+    if (action?.dataset.action === "load-more") {
       historyRenderLimit += HISTORY_RENDER_BATCH;
       renderRecords();
       return;
     }
-    const record = button.closest(".record");
+    const record = event.target.closest(".assistente-history-row");
     if (!record) return;
-    openEdit(record.dataset.id, button.dataset.action === "relief");
+    openEdit(record.dataset.id, action?.dataset.action === "relief");
+  });
+  els.records.addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const record = event.target.closest(".assistente-history-row");
+    if (!record) return;
+    event.preventDefault();
+    openEdit(record.dataset.id, false);
   });
   document.querySelectorAll("[data-relief]").forEach(button => button.addEventListener("click", () => { applyReliefPreset(button.dataset.relief).catch(console.error); }));
   els.saveEditBtn.addEventListener("click", saveEdit);
@@ -3039,6 +3169,10 @@ async function init() {
     syncAllDateTimeDisplays();
     renderAnalysisPreview();
     I18N?.apply(document);
+    if (activeSheet === els.scheduleDialog) {
+      els.scheduleDialogTitle.textContent = els.scheduleId?.value ? tr('assistant.editSchedule') : tr('assistant.newSchedule');
+      renderSchedulePreview();
+    }
     syncMedicinesToNative({ force: true });
     showToast(tr('language.changed'));
   });
