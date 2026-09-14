@@ -47,7 +47,7 @@ test('Novos textos do Assistente existem em português, inglês e espanhol', () 
     'assistant.searchMedication','assistant.newSchedule','assistant.editSchedule','assistant.timing',
     'assistant.summary','assistant.totalDoses','assistant.lastDose','assistant.endsAt',
     'assistant.active','assistant.upcoming','assistant.completed','assistant.noSchedules',
-    'assistant.scheduledAnalysis','assistant.scheduledBadge'
+    'assistant.nextDose','assistant.noNextDose','assistant.scheduledAnalysis','assistant.scheduledBadge'
   ];
   for (const locale of ['pt-BR','en-US','es-ES']) {
     for (const key of keys) assert.equal(typeof catalog?.[locale]?.[key], 'string', `${locale}: ${key}`);
@@ -86,6 +86,8 @@ test('Agendamentos exibem intervalo ao lado do nome e progresso como fração', 
   const block = app.slice(app.indexOf('function renderSchedules()'), app.indexOf('function renderReminderToggle()'));
   assert.match(block, /assistente-schedule-interval/);
   assert.match(block, /\$\{p\.taken\}\/\$\{p\.planned\}/);
+  assert.match(block, /assistant\.nextDose/);
+  assert.match(block, /assistente-schedule-next/);
   assert.doesNotMatch(block, /assistant\.ofPlanned/);
 });
 

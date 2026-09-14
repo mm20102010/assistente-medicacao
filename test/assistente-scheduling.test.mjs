@@ -112,14 +112,27 @@ test('reparo de migração associa registro existente praticamente no horário s
   assert.equal(val(ctx,"state.records.find(r=>r.id==='far').scheduleId"),'');
 });
 
-test('progresso do agendamento usa fração única e inclui dose futura já confirmada', () => {
+test('progresso do agendamento usa tratamento completo, não apenas doses vencidas', () => {
   const ctx=makeContext();
   const start=new Date(Date.now()+60*60_000), end=new Date(start.getTime()+24*3600000);
   const r=rev({start:start.toISOString(),end:end.toISOString(),effective:start.toISOString(),interval:480});
   const linked={id:'a',medicine:'Amoxil 500',date:'2026-09-14',time:'12:00',relief:'Não definido',scheduleId:'s1',scheduledAt:start.toISOString()};
   setState(ctx,{records:[linked],medicines:['Amoxil 500'],schedules:[schedule([r])],remindersEnabled:true});
   const progress=val(ctx,'scheduleProgress(state.schedules[0])');
-  assert.deepEqual(JSON.parse(JSON.stringify(progress)),{planned:1,taken:1});
+  assert.deepEqual(JSON.parse(JSON.stringify(progress)),{planned:3,taken:1});
+});
+
+test('Kaloba de 1 em 1 hora por 7 dias mostra 1/168 e próxima dose pendente', () => {
+  const ctx=makeContext();
+  const start=new Date('2026-09-14T19:05:00.000Z');
+  const end=new Date('2026-09-21T19:05:00.000Z');
+  const r=rev({medicine:'Kaloba',start:start.toISOString(),end:end.toISOString(),effective:start.toISOString(),interval:60});
+  const linked={id:'k1',medicine:'Kaloba',date:'2026-09-14',time:'16:05',relief:'Não definido',scheduleId:'s1',scheduledAt:start.toISOString()};
+  setState(ctx,{records:[linked],medicines:['Kaloba'],schedules:[schedule([r])],remindersEnabled:true});
+  const progress=val(ctx,'scheduleProgress(state.schedules[0])');
+  assert.deepEqual(JSON.parse(JSON.stringify(progress)),{planned:168,taken:1});
+  const next=val(ctx,"nextPendingScheduleOccurrence(state.schedules[0], new Date('2026-09-14T19:05:30.000Z')).at.toISOString()");
+  assert.equal(next,'2026-09-14T20:05:00.000Z');
 });
 
 test('intervalo do agendamento aceita até 248 horas e rejeita 249', () => {

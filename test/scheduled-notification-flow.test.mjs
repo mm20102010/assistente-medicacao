@@ -6,9 +6,10 @@ import { readFile } from 'node:fs/promises';
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const readBuffer = path => readFile(new URL(`../${path}`, import.meta.url));
 
-test('lembrete iPhone transporta contexto exato da dose e o AppDelegate captura o toque', async () => {
+test('lembrete iPhone transporta contexto exato da dose e captura toque em app ativo ou cold launch', async () => {
   const ios = await read('ios/App/App/WatchSessionManager.swift');
   const delegate = await read('ios/App/App/AppDelegate.swift');
+  const scene = await read('ios/App/App/SceneDelegate.swift');
 
   assert.match(ios, /content\.categoryIdentifier = "MEDICATION_SCHEDULED"/);
   assert.match(ios, /content\.userInfo = \[[\s\S]*?"type": "scheduledMedication"[\s\S]*?"scheduleId"[\s\S]*?"medicine"[\s\S]*?"scheduledAt"/);
@@ -16,6 +17,8 @@ test('lembrete iPhone transporta contexto exato da dose e o AppDelegate captura 
   assert.match(delegate, /identifier: "MEDICATION_SCHEDULED"/);
   assert.match(delegate, /MedicationNotificationContextStore\.shared\.store/);
   assert.match(delegate, /response\.notification\.request\.content\.userInfo/);
+  assert.match(scene, /connectionOptions\.notificationResponse/);
+  assert.match(scene, /MedicationNotificationContextStore\.shared\.store/);
 });
 
 test('ponte iOS expõe contexto de notificação ao WebView e emite evento de abertura', async () => {
@@ -27,6 +30,19 @@ test('ponte iOS expõe contexto de notificação ao WebView e emite evento de ab
   assert.match(runtime, /consumeScheduledMedicationNotificationContext/);
   assert.match(runtime, /addListener\('scheduledMedicationNotificationOpened'/);
   assert.match(runtime, /mm:scheduled-medication-notification-opened/);
+});
+
+
+test('foreground faz recuperação durável do contexto da notificação mesmo se o evento nativo for perdido', async () => {
+  const app = await read('public/app.js');
+  assert.match(app, /recoverScheduledMedicationNotificationContext/);
+  assert.match(app, /const delays = retry \? \[0, 120, 420, 900\] : \[0\]/);
+  assert.match(app, /window\.addEventListener\('focus'/);
+  assert.match(app, /document\.addEventListener\('visibilitychange'/);
+  assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED/);
+  const initStart = app.indexOf('async function init()');
+  const initBlock = app.slice(initStart, app.indexOf('document.addEventListener("DOMContentLoaded", init)', initStart));
+  assert.ok(initBlock.indexOf('refreshEntryMedicineDefault()') < initBlock.indexOf('recoverScheduledMedicationNotificationContext({ retry:true })'), 'contexto da notificação deve ser aplicado depois do default normal da Home');
 });
 
 test('toque no lembrete preenche Home com o remédio e preserva a ocorrência exata até registrar', async () => {

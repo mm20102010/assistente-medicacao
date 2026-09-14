@@ -7,6 +7,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
+        if let response = connectionOptions.notificationResponse {
+            MedicationNotificationContextStore.shared.store(
+                userInfo: response.notification.request.content.userInfo
+            )
+        }
+
         window = UIWindow(windowScene: windowScene)
         window?.rootViewController = AssistenteBridgeViewController()
         window?.makeKeyAndVisible()

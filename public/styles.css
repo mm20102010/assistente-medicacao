@@ -2359,3 +2359,12 @@ body.mm-registro--assistente .tab-panel__register-wrap .assistente-home-actions{
   body.mm-registro--assistente .tab-panel__register-wrap{gap:25px;padding-bottom:clamp(30px,5vh,54px)}
   body.mm-registro--assistente .tab-panel__register-wrap .assistente-home-actions{gap:17px}
 }
+
+/* Assistente 1.0 — próxima dose nos cards de agendamento */
+body.mm-registro--assistente .assistente-schedule-next{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.94em;
+  font-weight:650;
+}

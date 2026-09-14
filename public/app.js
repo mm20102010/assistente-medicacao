@@ -859,14 +859,39 @@ async function consumeScheduledMedicationNotificationContext() {
   if (!window.MMNative?.isIOS || typeof window.MMNative?.consumeScheduledMedicationNotificationContext !== 'function') return false;
   const context=await window.MMNative.consumeScheduledMedicationNotificationContext();
   if (!context) return false;
+  diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED', {
+    medicine:cleanField(context.medicine).slice(0,80),
+    scheduleId:cleanField(context.scheduleId).slice(0,100),
+    scheduledAt:cleanField(context.scheduledAt).slice(0,64)
+  });
   return applyScheduledNotificationContext(context);
+}
+
+let scheduledNotificationRecoveryPromise = null;
+async function recoverScheduledMedicationNotificationContext({ retry = false } = {}) {
+  if (scheduledNotificationRecoveryPromise) return scheduledNotificationRecoveryPromise;
+  const delays = retry ? [0, 120, 420, 900] : [0];
+  const run = (async()=>{
+    for (const delay of delays) {
+      if (delay) await new Promise(resolve=>setTimeout(resolve,delay));
+      if (await consumeScheduledMedicationNotificationContext()) return true;
+    }
+    return false;
+  })();
+  scheduledNotificationRecoveryPromise = run;
+  try { return await run; }
+  finally { if (scheduledNotificationRecoveryPromise === run) scheduledNotificationRecoveryPromise = null; }
 }
 
 function bindNativeScheduledNotificationRecovery() {
   if (!window.MMNative?.isIOS) return;
-  window.addEventListener('mm:scheduled-medication-notification-opened',()=>{
-    consumeScheduledMedicationNotificationContext().catch(error=>console.warn('Falha ao aplicar contexto do lembrete aberto:',error));
-  });
+  const recover = (event, retry = false) => {
+    diagnosticTrace('SCHEDULE_NOTIFICATION_RECOVERY_TRIGGER', { trigger:event?.type || 'manual', hidden:Boolean(document.hidden) });
+    recoverScheduledMedicationNotificationContext({ retry }).catch(error=>console.warn('Falha ao aplicar contexto do lembrete aberto:',error));
+  };
+  window.addEventListener('mm:scheduled-medication-notification-opened',event=>recover(event,false));
+  window.addEventListener('focus',event=>recover(event,true));
+  document.addEventListener('visibilitychange',event=>{ if (!document.hidden) recover(event,true); });
 }
 
 async function loadState() {
@@ -3186,15 +3211,22 @@ async function deleteCurrentSchedule() {
   showToast(tr('assistant.scheduleDeleted'));
 }
 function scheduleProgress(schedule) {
-  const rev=currentScheduleRevision(schedule);
-  if(!rev)return {planned:0,taken:0};
-  const now=new Date();
-  const due=scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date(now.getTime()+1));
-  const currentRevisionKeys=new Set(scheduleOccurrences(schedule,new Date(rev.planStartAt),new Date(rev.endAt)).map(o=>scheduledOccurrenceKey(o.scheduleId,o.at)));
-  const linkedKeys=new Set(state.records.filter(r=>r.scheduleId===schedule.id).map(recordScheduledOccurrenceKey).filter(key=>key&&currentRevisionKeys.has(key)));
-  const plannedKeys=new Set(due.map(o=>scheduledOccurrenceKey(o.scheduleId,o.at)));
-  for (const key of linkedKeys) plannedKeys.add(key);
-  return {planned:plannedKeys.size,taken:linkedKeys.size};
+  if(!schedule || schedule.status==='cancelled') return {planned:0,taken:0};
+  const occurrences=scheduleOccurrences(schedule);
+  const plannedKeys=new Set(occurrences.map(o=>scheduledOccurrenceKey(o.scheduleId,o.at)).filter(Boolean));
+  const takenKeys=new Set(
+    state.records
+      .filter(r=>r.scheduleId===schedule.id)
+      .map(recordScheduledOccurrenceKey)
+      .filter(key=>key&&plannedKeys.has(key))
+  );
+  return {planned:plannedKeys.size,taken:takenKeys.size};
+}
+function nextPendingScheduleOccurrence(schedule, now = new Date()) {
+  if(!schedule || schedule.status==='cancelled') return null;
+  const used=usedScheduledOccurrenceKeys();
+  return scheduleOccurrences(schedule,new Date(now.getTime()-1),new Date(8640000000000000))
+    .find(o=>o.at>=now && !used.has(scheduledOccurrenceKey(o.scheduleId,o.at))) || null;
 }
 function renderSchedules() {
   if(!els.schedulesList)return;
@@ -3214,9 +3246,11 @@ function renderSchedules() {
       <div class="history-day">${escapeHtml(labels[key])}</div>
       <div class="history-day-card">${items.map(({schedule,r})=>{
         const p=scheduleProgress(schedule);
+        const next=nextPendingScheduleOccurrence(schedule,now);
+        const nextLabel=next ? tr('assistant.nextDose',{time:formatScheduleDate(next.at)}) : (key==='done' ? tr('assistant.noNextDose') : '');
         return `<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
           <span class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
-          <span class="record-main"><strong>${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span>${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span></span>
+          <span class="record-main"><strong>${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span>${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))} → ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span>${nextLabel?`<span class="assistente-schedule-next">${escapeHtml(nextLabel)}</span>`:''}</span>
           <span class="assistente-schedule-progress"><strong>${p.taken}/${p.planned}</strong></span>
         </button>`;
       }).join('')}</div>
@@ -3426,12 +3460,12 @@ async function init() {
     });
     await syncWatchMedicationEventsFromNative({ render: false });
     renderAll();
-    await consumeScheduledMedicationNotificationContext();
-    await reconcileMedicationNotifications();
-    // The register screen always starts with the first medicine in the persisted order.
-    // renderAll() can preserve a stale pre-load selection, so reset only after loadState().
+    // Establish the ordinary Home default first; notification recovery, when present,
+    // must be the final authority over the medication shown to the user.
     refreshEntryMedicineDefault();
     setActiveTab("register");
+    await recoverScheduledMedicationNotificationContext({ retry:true });
+    await reconcileMedicationNotifications();
     if (navigator.storage?.persist) {
       try { await navigator.storage.persist(); } catch (_) {}
     }
