@@ -71,6 +71,7 @@ test('toque no lembrete preenche Home com o remédio e preserva a ocorrência ex
   assert.match(block, /scheduledOccurrenceFromNotificationContext\(normalizedContext\)/);
   assert.match(block, /isOccurrenceConsumed\(occurrence\)/);
   assert.match(block, /pendingScheduledNotificationContext=normalizedContext/);
+  assert.match(block, /closeTransientUiForScheduledNotification\(\)/);
   assert.match(block, /setActiveTab\('register'\)/);
   assert.match(block, /fillMedicineSelect\(els\.entryMedicine,medicine\)/);
   assert.match(block, /setNow\(\)/);
@@ -184,4 +185,25 @@ test('diagnóstico do contexto informa origem, request e delegate se o problema 
   assert.match(runtime, /delegateType:String\(result\?\.delegateType/);
   assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_EMPTY[\s\S]*?delegateType/);
   assert.match(app, /SCHEDULE_NOTIFICATION_CONTEXT_RECEIVED[\s\S]*?captureSource[\s\S]*?requestIdentifier[\s\S]*?delegateType/);
+});
+
+
+test('toque em notificação fecha Análises e qualquer camada secundária antes de mostrar a Home', async () => {
+  const app = await read('public/app.js');
+  const helperStart = app.indexOf('function closeTransientUiForScheduledNotification()');
+  const helperEnd = app.indexOf('\nfunction scheduledOccurrenceFromNotificationContext', helperStart);
+  const helper = app.slice(helperStart, helperEnd);
+  assert.ok(helperStart >= 0 && helperEnd > helperStart);
+  assert.match(helper, /document\.querySelectorAll\('\[data-mm-secondary-layer\]\.open,\[data-mm-secondary-layer\]\[aria-hidden=\"false\"\]'\)/);
+  assert.match(helper, /closeSecondarySheet\?\.\(layer, \{ restoreFocus:false \}\)/);
+  assert.match(helper, /document\.querySelectorAll\('dialog\[open\]'\)/);
+
+  const applyStart = app.indexOf('async function applyScheduledNotificationContext');
+  const applyEnd = app.indexOf('\nasync function consumeScheduledMedicationNotificationContext', applyStart);
+  const apply = app.slice(applyStart, applyEnd);
+  const closeIndex = apply.indexOf('closeTransientUiForScheduledNotification()');
+  const homeIndex = apply.indexOf("setActiveTab('register')");
+  const selectIndex = apply.indexOf('fillMedicineSelect(els.entryMedicine,medicine)');
+  assert.ok(closeIndex >= 0 && homeIndex > closeIndex && selectIndex > homeIndex, 'camadas devem fechar antes de navegar e pré-selecionar o medicamento');
+  assert.match(app, /SCHEDULE_NOTIFICATION_UI_RESET/);
 });

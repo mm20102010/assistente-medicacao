@@ -521,7 +521,7 @@ function scheduledDoseDetailedStats(start, end, now = new Date()) {
     }
   }
 
-  const base=()=>({planned:0,due:0,taken:0,takenDue:0,onTime:0,early:0,late:0,missed:0,futurePending:0,futureTaken:0,absoluteDeviationTotal:0,measuredTaken:0});
+  const base=()=>({planned:0,due:0,taken:0,takenDue:0,onTime:0,within15:0,early:0,late:0,missed:0,futurePending:0,futureTaken:0,absoluteDeviationTotal:0,measuredTaken:0});
   const total=base();
   const medicines=new Map();
   const ensureMedicine=name=>{
@@ -550,6 +550,7 @@ function scheduledDoseDetailedStats(start, end, now = new Date()) {
     const absolute=Math.abs(deltaMinutes);
     total.absoluteDeviationTotal+=absolute; total.measuredTaken++;
     bucket.absoluteDeviationTotal+=absolute; bucket.measuredTaken++;
+    if (absolute<=15) { total.within15++; bucket.within15++; }
     if (absolute<=30) { total.onTime++; bucket.onTime++; }
     else if (deltaMinutes<0) { total.early++; bucket.early++; }
     else { total.late++; bucket.late++; }
@@ -559,6 +560,7 @@ function scheduledDoseDetailedStats(start, end, now = new Date()) {
     ...value,
     adherence:value.due?Math.round(value.takenDue/value.due*100):0,
     punctuality:value.taken?Math.round(value.onTime/value.taken*100):0,
+    within15Rate:value.taken?Math.round(value.within15/value.taken*100):0,
     avgDeviationMinutes:value.measuredTaken?value.absoluteDeviationTotal/value.measuredTaken:null
   });
   const byMedicine=[...medicines.values()].map(finalize).sort((a,b)=>b.planned-a.planned||a.name.localeCompare(b.name,'pt-BR'));
@@ -906,6 +908,27 @@ function clearScheduledNotificationContext() {
   pendingScheduledNotificationContext = null;
 }
 
+function closeTransientUiForScheduledNotification() {
+  let secondaryClosed = 0;
+  const secondaryLayers = typeof document?.querySelectorAll === 'function'
+    ? document.querySelectorAll('[data-mm-secondary-layer].open,[data-mm-secondary-layer][aria-hidden="false"]')
+    : [];
+  for (const layer of secondaryLayers) {
+    window.MMRegistro?.closeSecondarySheet?.(layer, { restoreFocus:false });
+    secondaryClosed += 1;
+  }
+  if (activeSheet?.matches?.('[data-mm-secondary-layer]')) activeSheet = null;
+
+  let dialogsClosed = 0;
+  const openDialogs = typeof document?.querySelectorAll === 'function' ? document.querySelectorAll('dialog[open]') : [];
+  for (const dialog of openDialogs) {
+    try { dialog.close(); dialogsClosed += 1; } catch (_) {}
+  }
+  if (els.overlay) els.overlay.hidden = true;
+  if (document?.body?.classList?.toggle) setTabbarSuspended(false);
+  return { secondaryClosed, dialogsClosed };
+}
+
 function scheduledOccurrenceFromNotificationContext(context = pendingScheduledNotificationContext) {
   if (!context) return null;
   const scheduleId=cleanField(context.scheduleId).slice(0,100);
@@ -932,9 +955,11 @@ async function applyScheduledNotificationContext(context) {
     return false;
   }
   pendingScheduledNotificationContext=normalizedContext;
+  const uiReset=closeTransientUiForScheduledNotification();
   setActiveTab('register');
   fillMedicineSelect(els.entryMedicine,medicine);
   setNow();
+  diagnosticTrace('SCHEDULE_NOTIFICATION_UI_RESET',uiReset);
   diagnosticTrace('SCHEDULE_NOTIFICATION_CONTEXT_APPLIED',{medicine,scheduleId,scheduledAt,open:true});
   return true;
 }
@@ -1696,6 +1721,8 @@ function computeAnalysisData(recordsInput = state.records) {
     undefinedTotal,
     textOnlyTotal,
     scheduled,
+    dailyUsage:[...activeDates.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,count])=>({date,count})),
+    scheduledRange:scheduledBounds ? { start:scheduledBounds.start.toISOString(), end:scheduledBounds.end.toISOString() } : null,
     notes,
     periodLabel: tr('range.between',{start:isoToLocalDate(start),end:isoToLocalDate(end)})
   };
@@ -1788,7 +1815,7 @@ function scheduledAnalysisHtml(stats) {
   const pct=value=>`${Math.max(0,Math.min(100,Number(value)||0))}%`;
   const deviation=stats.avgDeviationMinutes==null?'—':formatMinutesHuman(stats.avgDeviationMinutes);
   const details=stats.medicines.map(item=>`<li><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(tr('assistant.scheduledMedicineDetail',{medicine:item.name,taken:item.taken,planned:item.planned,due:item.due,onTime:item.onTime,early:item.early,late:item.late,missed:item.missed,future:item.futurePending,adherence:pct(item.adherence),punctuality:pct(item.punctuality)}).replace(`${item.name}: `,''))}</span></li>`).join('');
-  return `<section class="analysis-card assistente-analysis-adherence"><h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.analysisHelp'))}</p><div class="assistente-analysis-grid assistente-analysis-grid--scheduled"><div><span>${escapeHtml(tr('assistant.scheduledMedicines'))}</span><strong>${stats.medicineCount}</strong></div><div><span>${escapeHtml(tr('assistant.plannedDoses'))}</span><strong>${stats.planned}</strong></div><div><span>${escapeHtml(tr('assistant.dueDoses'))}</span><strong>${stats.due}</strong></div><div><span>${escapeHtml(tr('assistant.recordedDoses'))}</span><strong>${stats.taken}</strong></div><div><span>${escapeHtml(tr('assistant.adherence'))}</span><strong>${pct(stats.adherence)}</strong></div><div><span>${escapeHtml(tr('assistant.punctuality'))}</span><strong>${pct(stats.punctuality)}</strong></div><div><span>${escapeHtml(tr('assistant.onTime'))}</span><strong>${stats.onTime}</strong></div><div><span>${escapeHtml(tr('assistant.overdueUnrecorded'))}</span><strong>${stats.missed}</strong></div><div><span>${escapeHtml(tr('assistant.earlyDoses'))}</span><strong>${stats.early}</strong></div><div><span>${escapeHtml(tr('assistant.lateDoses'))}</span><strong>${stats.late}</strong></div><div><span>${escapeHtml(tr('assistant.pendingFutureDoses'))}</span><strong>${stats.futurePending}</strong></div><div><span>${escapeHtml(tr('assistant.avgDeviation'))}</span><strong>${escapeHtml(deviation)}</strong></div></div><h5 class="assistente-analysis-subtitle">${escapeHtml(tr('assistant.scheduledBreakdown'))}</h5><ul class="assistente-analysis-breakdown">${details}</ul><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.scheduledMethodNote'))}</p></section>`;
+  return `<section class="analysis-card assistente-analysis-adherence"><h4>${escapeHtml(tr('assistant.scheduledAnalysis'))}</h4><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.analysisHelp'))}</p><div class="assistente-analysis-grid assistente-analysis-grid--scheduled"><div><span>${escapeHtml(tr('assistant.scheduledMedicines'))}</span><strong>${stats.medicineCount}</strong></div><div><span>${escapeHtml(tr('assistant.plannedDoses'))}</span><strong>${stats.planned}</strong></div><div><span>${escapeHtml(tr('assistant.dueDoses'))}</span><strong>${stats.due}</strong></div><div><span>${escapeHtml(tr('assistant.recordedDoses'))}</span><strong>${stats.taken}</strong></div><div><span>${escapeHtml(tr('assistant.adherence'))}</span><strong>${pct(stats.adherence)}</strong></div><div><span>${escapeHtml(tr('assistant.punctuality'))}</span><strong>${pct(stats.punctuality)}</strong></div><div><span>${escapeHtml(tr('assistant.within15'))}</span><strong>${stats.within15} · ${pct(stats.within15Rate)}</strong></div><div><span>${escapeHtml(tr('assistant.onTime'))}</span><strong>${stats.onTime}</strong></div><div><span>${escapeHtml(tr('assistant.overdueUnrecorded'))}</span><strong>${stats.missed}</strong></div><div><span>${escapeHtml(tr('assistant.earlyDoses'))}</span><strong>${stats.early}</strong></div><div><span>${escapeHtml(tr('assistant.lateDoses'))}</span><strong>${stats.late}</strong></div><div><span>${escapeHtml(tr('assistant.pendingFutureDoses'))}</span><strong>${stats.futurePending}</strong></div><div><span>${escapeHtml(tr('assistant.avgDeviation'))}</span><strong>${escapeHtml(deviation)}</strong></div></div><h5 class="assistente-analysis-subtitle">${escapeHtml(tr('assistant.scheduledBreakdown'))}</h5><ul class="assistente-analysis-breakdown">${details}</ul><p class="analysis-empty assistente-analysis-note">${escapeHtml(tr('assistant.scheduledMethodNote'))}</p></section>`;
 }
 
 function renderAnalysisPreview() {
@@ -1879,148 +1906,314 @@ function wrapCanvasText(ctx, text, maxWidth) {
   return lines;
 }
 
-async function makeAnalysisImageFile(summary = lastAnalysisSummary) {
-  if (!summary || (!summary.totalRecords && !summary.scheduled?.planned)) throw new Error(tr('analysis.noDataError'));
-  const lines = analysisLines(summary);
+function createAnalysisReportCanvas(height = 2100) {
   const width = 1080;
-  const margin = 54;
-  const cardGap = 18;
-  const cardWidth = width - margin * 2;
   const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-
-  const sections = [
-    { title:tr('analysis.overview'), lines:lines.overview },
-    { title:tr('analysis.topMedicines'), lines:lines.top },
-    { title:tr('analysis.reliefQuality'), lines:lines.relief },
-    { title:tr('analysis.evolution'), lines:lines.evolution },
-    { title:tr('analysis.methodNotes'), lines:lines.notes },
-    { title:tr('assistant.scheduledAnalysis'), lines:lines.scheduled }
-  ].map(section => ({
-    ...section,
-    prepared: []
-  }));
-
-  ctx.font = `400 29px ${EXPORT_FONT_SERIF}`;
-  for (const section of sections) {
-    section.prepared = section.lines.map(line => wrapCanvasText(ctx, line, cardWidth - 100));
-    section.height = 88 + section.prepared.reduce((sum, item) => sum + Math.max(1, item.length) * 40, 0);
-  }
-
-  const metrics = [
-    { label:tr('analysis.period'), value: `${summary.periodDays} ${tr(summary.periodDays === 1 ? 'analysis.days.one' : 'analysis.days.other')}`, note: summary.periodLabel },
-    { label:tr('analysis.avgUse'), value: formatCountPerDay(summary.overallAvgPerDay), note: `${summary.totalRecords} ${tr(summary.totalRecords === 1 ? 'count.record.one' : 'count.record.other')}` },
-    { label:tr('analysis.mostUsed'), value: summary.topMedicines[0]?.name || "—", note: summary.topMedicines[0] ? tr('analysis.uses', { count:summary.topMedicines[0].count }) : tr('analysis.noDataShort') },
-    { label:tr('analysis.fastestRelief'), value: summary.fastest[0] ? `${summary.fastest[0].name}` : tr('analysis.noDataShort'), note: summary.fastest[0] ? formatMinutesHuman(summary.fastest[0].avgReliefMinutes) : "" }
-  ];
-  if (summary.scheduled?.planned) metrics.push(
-    { label:tr('assistant.plannedDoses'), value:String(summary.scheduled.planned), note:`${summary.scheduled.medicineCount} ${tr('assistant.scheduledMedicines').toLowerCase()}` },
-    { label:tr('assistant.recordedDoses'), value:String(summary.scheduled.taken), note:`${summary.scheduled.due} ${tr('assistant.dueDoses').toLowerCase()}` },
-    { label:tr('assistant.adherence'), value:`${summary.scheduled.adherence}%`, note:`${summary.scheduled.missed} ${tr('assistant.overdueUnrecorded').toLowerCase()}` },
-    { label:tr('assistant.punctuality'), value:`${summary.scheduled.punctuality}%`, note:`${summary.scheduled.onTime} ${tr('assistant.onTime').toLowerCase()}` }
-  );
-
-  const headerHeight = 210;
-  const metricW = (cardWidth - 14) / 2;
-  ctx.font = `700 31px ${EXPORT_FONT_SERIF}`;
-  for (const metric of metrics) metric.valueLines = wrapCanvasText(ctx, metric.value, metricW - 48);
-  const metricH = 98 + Math.max(...metrics.map(metric => metric.valueLines.length)) * 32;
-  const metricRows = Math.ceil(metrics.length / 2);
-  const metricsHeight = metricH * metricRows + 14 * Math.max(0, metricRows - 1);
-  const bodyHeight = sections.reduce((sum, section) => sum + section.height, 0) + cardGap * (sections.length - 1);
-  const footerHeight = 84;
-  const height = margin + headerHeight + 28 + metricsHeight + 26 + bodyHeight + footerHeight + margin;
   canvas.width = width;
   canvas.height = height;
-
+  const ctx = canvas.getContext("2d");
   const bg = ctx.createLinearGradient(0, 0, width, height);
   bg.addColorStop(0, "#06111f");
   bg.addColorStop(.55, "#0c2541");
   bg.addColorStop(1, "#081423");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
-
   ctx.fillStyle = "rgba(157,193,245,.08)";
   ctx.beginPath(); ctx.arc(width - 90, 120, 124, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(70, height - 120, 134, 0, Math.PI * 2); ctx.fill();
-
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
+  return { canvas, ctx, width, margin:54, cardWidth:width - 108 };
+}
+
+function drawAnalysisReportHeader(ctx, { title, subtitle, kicker = tr('analysis.exportKicker') }, margin = 54) {
   ctx.fillStyle = "rgba(231,238,246,.74)";
   ctx.font = `700 20px ${EXPORT_FONT_SERIF}`;
-  ctx.fillText(tr('analysis.exportKicker'), margin, margin + 8);
-
+  ctx.fillText(kicker, margin, margin + 8);
   ctx.fillStyle = "#ffffff";
   ctx.font = `700 56px ${EXPORT_FONT_SERIF}`;
-  ctx.fillText(tr('analysis.periodSummary'), margin, margin + 42);
-
+  const titleLines = wrapCanvasText(ctx, title, 900);
+  let y = margin + 42;
+  titleLines.forEach(line => { ctx.fillText(line, margin, y); y += 62; });
   ctx.fillStyle = "rgba(231,238,246,.82)";
-  ctx.font = `400 28px ${EXPORT_FONT_SERIF}`;
-  ctx.fillText(`${summary.periodLabel} • ${tr('export.generated', { date:I18N?.formatDateTime(new Date()) || new Date().toLocaleString() })}`, margin, margin + 120);
+  ctx.font = `400 26px ${EXPORT_FONT_SERIF}`;
+  const subtitleLines = wrapCanvasText(ctx, subtitle, 920);
+  y += 4;
+  subtitleLines.forEach(line => { ctx.fillText(line, margin, y); y += 34; });
+  return y + 30;
+}
 
-  const metricsY = margin + headerHeight;
-  metrics.forEach((metric, index) => {
-    const col = index % 2;
-    const row = Math.floor(index / 2);
-    const x = margin + col * (metricW + 14);
-    const y = metricsY + row * (metricH + 14);
-    ctx.save();
-    drawRoundedRect(ctx, x, y, metricW, metricH, 28);
-    ctx.fillStyle = "rgba(7,18,34,.82)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(149,182,222,.24)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = "rgba(231,238,246,.74)";
-    ctx.font = `700 18px ${EXPORT_FONT_SERIF}`;
-    ctx.fillText(metric.label, x + 24, y + 20);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `700 31px ${EXPORT_FONT_SERIF}`;
-    const valueLines = metric.valueLines;
-    valueLines.forEach((line, i) => ctx.fillText(line, x + 24, y + 46 + i * 32));
-    ctx.fillStyle = "rgba(231,238,246,.70)";
-    ctx.font = `400 18px ${EXPORT_FONT_SERIF}`;
-    ctx.fillText(metric.note, x + 24, y + metricH - 28);
-    ctx.restore();
+function drawAnalysisMetricGrid(ctx, metrics, y, { margin = 54, cardWidth = 972, columns = 2 } = {}) {
+  const gap = 14;
+  const width = (cardWidth - gap * (columns - 1)) / columns;
+  const height = 146;
+  metrics.forEach((metric,index)=>{
+    const col=index%columns, row=Math.floor(index/columns);
+    const x=margin + col*(width+gap);
+    const top=y + row*(height+gap);
+    drawRoundedRect(ctx,x,top,width,height,26);
+    ctx.fillStyle="rgba(7,18,34,.82)"; ctx.fill();
+    ctx.strokeStyle="rgba(149,182,222,.24)"; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle="rgba(231,238,246,.72)";
+    ctx.font=`700 18px ${EXPORT_FONT_SERIF}`;
+    const labels=wrapCanvasText(ctx,metric.label,width-44).slice(0,2);
+    labels.forEach((line,i)=>ctx.fillText(line,x+22,top+18+i*21));
+    ctx.fillStyle="#ffffff";
+    ctx.font=`700 32px ${EXPORT_FONT_SERIF}`;
+    const values=wrapCanvasText(ctx,String(metric.value ?? '—'),width-44).slice(0,2);
+    const valueY=top+62;
+    values.forEach((line,i)=>ctx.fillText(line,x+22,valueY+i*34));
+    if (metric.note) {
+      ctx.fillStyle="rgba(231,238,246,.62)";
+      ctx.font=`400 16px ${EXPORT_FONT_SERIF}`;
+      const note=wrapCanvasText(ctx,metric.note,width-44)[0] || '';
+      ctx.fillText(note,x+22,top+height-25);
+    }
   });
+  const rows=Math.ceil(metrics.length/columns);
+  return y + rows*height + Math.max(0,rows-1)*gap;
+}
 
-  let y = metricsY + metricsHeight + 26;
-  for (const section of sections) {
-    ctx.save();
-    drawRoundedRect(ctx, margin, y, cardWidth, section.height, 28);
-    ctx.fillStyle = "rgba(7,18,34,.84)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(149,182,222,.20)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `700 30px ${EXPORT_FONT_SERIF}`;
-    ctx.fillText(section.title, margin + 28, y + 24);
-    ctx.fillStyle = "rgba(242,247,252,.92)";
-    ctx.font = `400 28px ${EXPORT_FONT_SERIF}`;
-    let lineY = y + 68;
-    section.prepared.forEach(group => {
-      group.forEach((line, index) => {
-        const prefix = index === 0 ? "• " : "  ";
-        ctx.fillText(`${prefix}${line}`, margin + 34, lineY);
-        lineY += 40;
-      });
+function measureAnalysisTextCard(ctx, title, items, width = 972) {
+  ctx.font=`400 24px ${EXPORT_FONT_SERIF}`;
+  const prepared=(items || []).flatMap(item=>wrapCanvasText(ctx,item,width-86));
+  return { prepared, height:92 + prepared.length*32 + 20 };
+}
+
+function drawAnalysisTextCard(ctx, title, items, y, { margin = 54, cardWidth = 972 } = {}) {
+  const measured=measureAnalysisTextCard(ctx,title,items,cardWidth);
+  drawRoundedRect(ctx,margin,y,cardWidth,measured.height,26);
+  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
+  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#ffffff";
+  ctx.font=`700 28px ${EXPORT_FONT_SERIF}`;
+  ctx.fillText(title,margin+26,y+22);
+  ctx.fillStyle="rgba(242,247,252,.92)";
+  ctx.font=`400 24px ${EXPORT_FONT_SERIF}`;
+  let lineY=y+68;
+  for (const line of measured.prepared) {
+    ctx.fillText(`• ${line}`,margin+30,lineY);
+    lineY += 32;
+  }
+  return y + measured.height;
+}
+
+function analysisDailyUsageSeries(summary) {
+  if (!summary?.start || !summary?.end) return [];
+  const counts=new Map((summary.dailyUsage || []).map(item=>[item.date,Number(item.count)||0]));
+  const parse=iso=>{ const [y,m,d]=String(iso).split('-').map(Number); return new Date(y,m-1,d,12,0,0,0); };
+  const cursor=parse(summary.start), end=parse(summary.end);
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(end.getTime())) return [];
+  const out=[];
+  for (let d=new Date(cursor); d<=end; d.setDate(d.getDate()+1)) {
+    const key=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    out.push({ label:key, value:counts.get(key)||0 });
+  }
+  return out;
+}
+
+function shortAnalysisDate(iso) {
+  const [y,m,d]=String(iso||'').split('-').map(Number);
+  if (!validDateParts(y,m,d)) return String(iso||'');
+  return I18N?.formatDate(new Date(y,m-1,d),{day:'2-digit',month:'2-digit'}) || `${pad2(d)}/${pad2(m)}`;
+}
+
+function drawAnalysisLineChartCard(ctx, { title, subtitle, series }, y, { margin = 54, cardWidth = 972, height = 500 } = {}) {
+  drawRoundedRect(ctx,margin,y,cardWidth,height,26);
+  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
+  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
+  ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
+  const subtitleLines=wrapCanvasText(ctx,subtitle,cardWidth-52).slice(0,2);
+  subtitleLines.forEach((line,i)=>ctx.fillText(line,margin+26,y+58+i*23));
+
+  const chartX=margin+66, chartY=y+126, chartW=cardWidth-104, chartH=height-190;
+  const values=(series||[]).map(item=>Number(item.value)||0);
+  const maxValue=Math.max(1,...values);
+  ctx.strokeStyle="rgba(183,207,235,.16)"; ctx.lineWidth=1;
+  ctx.fillStyle="rgba(231,238,246,.56)"; ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
+  for (let i=0;i<=4;i++) {
+    const gy=chartY + chartH - (chartH*i/4);
+    ctx.beginPath(); ctx.moveTo(chartX,gy); ctx.lineTo(chartX+chartW,gy); ctx.stroke();
+    ctx.fillText(String(Math.round(maxValue*i/4)),margin+18,gy-8);
+  }
+  if (!series?.length) {
+    ctx.fillStyle="rgba(231,238,246,.60)"; ctx.font=`400 22px ${EXPORT_FONT_SERIF}`;
+    ctx.fillText(tr('analysis.noData'),chartX,chartY+chartH/2);
+    return y+height;
+  }
+  const points=series.map((item,index)=>({
+    x:series.length===1?chartX+chartW/2:chartX+(index/(series.length-1))*chartW,
+    y:chartY+chartH-(Number(item.value||0)/maxValue)*chartH,
+    ...item
+  }));
+  const fill=ctx.createLinearGradient(0,chartY,0,chartY+chartH);
+  fill.addColorStop(0,'rgba(107,174,239,.32)'); fill.addColorStop(1,'rgba(107,174,239,.02)');
+  ctx.beginPath(); ctx.moveTo(points[0].x,chartY+chartH); points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.lineTo(points.at(-1).x,chartY+chartH); ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+  ctx.beginPath(); points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.strokeStyle="#75b6f0"; ctx.lineWidth=4; ctx.stroke();
+  if (points.length<=31) {
+    ctx.fillStyle="#dcecff";
+    points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();});
+  }
+  const labelIndexes=[0,Math.floor((points.length-1)/4),Math.floor((points.length-1)/2),Math.floor((points.length-1)*3/4),points.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+  ctx.fillStyle="rgba(231,238,246,.62)"; ctx.font=`400 15px ${EXPORT_FONT_SANS}`; ctx.textAlign="center";
+  labelIndexes.forEach(index=>ctx.fillText(shortAnalysisDate(points[index].label),points[index].x,chartY+chartH+16));
+  ctx.textAlign="left";
+  return y+height;
+}
+
+function drawAnalysisBarChartCard(ctx, { title, subtitle, bars }, y, { margin = 54, cardWidth = 972, height = 500 } = {}) {
+  drawRoundedRect(ctx,margin,y,cardWidth,height,26);
+  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
+  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
+  ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
+  const subtitleLines=wrapCanvasText(ctx,subtitle,cardWidth-52).slice(0,2);
+  subtitleLines.forEach((line,i)=>ctx.fillText(line,margin+26,y+58+i*23));
+  const chartX=margin+54, chartY=y+136, chartW=cardWidth-108, chartH=height-210;
+  const maxValue=Math.max(1,...(bars||[]).map(item=>Number(item.value)||0));
+  const gap=26, barW=(chartW-gap*Math.max(0,(bars?.length||0)-1))/Math.max(1,bars?.length||1);
+  (bars||[]).forEach((bar,index)=>{
+    const value=Number(bar.value)||0;
+    const h=(value/maxValue)*(chartH-58);
+    const x=chartX+index*(barW+gap), top=chartY+chartH-58-h;
+    drawRoundedRect(ctx,x,top,barW,h||3,18);
+    ctx.fillStyle="rgba(87,157,224,.82)"; ctx.fill();
+    ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.textAlign="center";
+    ctx.fillText(String(value),x+barW/2,Math.max(chartY,top-38));
+    ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
+    const labelLines=wrapCanvasText(ctx,bar.label,barW-12).slice(0,3);
+    labelLines.forEach((line,i)=>ctx.fillText(line,x+barW/2,chartY+chartH-42+i*19));
+  });
+  ctx.textAlign="left";
+  return y+height;
+}
+
+function drawAnalysisReportFooter(ctx, canvas, page, pages = null) {
+  const margin=54;
+  ctx.fillStyle="rgba(231,238,246,.58)";
+  ctx.font=`400 17px ${EXPORT_FONT_SERIF}`;
+  const localizedName=tr('app.title');
+  const reportName = localizedName === 'Medication Assistant' ? localizedName : `${localizedName} / Medication Assistant`;
+  const generated=tr('export.generated',{date:I18N?.formatDateTime(new Date())||new Date().toLocaleString()});
+  ctx.fillText(`${reportName} • v${APP_VERSION} • ${generated}`,margin,canvas.height-54);
+  ctx.textAlign='right';
+  ctx.fillText(pages ? `${page}/${pages}` : String(page),canvas.width-margin,canvas.height-54);
+  ctx.textAlign='left';
+}
+
+async function analysisFileFromCanvas(canvas, filename) {
+  const blob=await canvasToBlob(canvas);
+  canvas.width=1; canvas.height=1;
+  return new File([blob],filename,{type:'image/png'});
+}
+
+function scheduledReportPeriod(summary) {
+  if (!summary?.scheduledRange) return tr('assistant.scheduledNoPlans');
+  const start=new Date(summary.scheduledRange.start), end=new Date(summary.scheduledRange.end);
+  const format=value=>I18N?.formatDateTime(value)||value.toLocaleString();
+  return `${format(start)} → ${format(end)}`;
+}
+
+function scheduledDetailLines(stats) {
+  if (!stats?.planned) return [tr('assistant.scheduledNoPlans')];
+  return stats.medicines.map(item=>{
+    const base=tr('assistant.scheduledMedicineDetail',{
+      medicine:item.name,taken:item.taken,planned:item.planned,due:item.due,onTime:item.onTime,
+      early:item.early,late:item.late,missed:item.missed,future:item.futurePending,
+      adherence:`${item.adherence}%`,punctuality:`${item.punctuality}%`
     });
-    ctx.restore();
-    y += section.height + cardGap;
+    return `${base} ${tr('assistant.within15')}: ${item.within15} (${item.within15Rate}%).`;
+  });
+}
+
+async function makeAnalysisImageFiles(summary = lastAnalysisSummary) {
+  if (!summary || (!summary.totalRecords && !summary.scheduled?.planned)) throw new Error(tr('analysis.noDataError'));
+  const lines=analysisLines(summary);
+  const files=[];
+  const totalPages=3;
+  const suffix=`${summary.start}_${summary.end}`;
+
+  // Imagem 1 — visão geral do período + uso diário.
+  {
+    const {canvas,ctx,margin,cardWidth}=createAnalysisReportCanvas(2100);
+    let y=drawAnalysisReportHeader(ctx,{title:tr('analysis.generalReportTitle'),subtitle:summary.periodLabel});
+    const fastest=summary.fastest[0]||null;
+    y=drawAnalysisMetricGrid(ctx,[
+      {label:tr('analysis.period'),value:`${summary.periodDays} ${tr(summary.periodDays===1?'analysis.days.one':'analysis.days.other')}`,note:summary.periodLabel},
+      {label:tr('analysis.avgUse'),value:formatCountPerDay(summary.overallAvgPerDay),note:`${summary.totalRecords} ${tr(summary.totalRecords===1?'count.record.one':'count.record.other')}`},
+      {label:tr('analysis.mostUsed'),value:summary.topMedicines[0]?.name||'—',note:summary.topMedicines[0]?tr('analysis.uses',{count:summary.topMedicines[0].count}):tr('analysis.noDataShort')},
+      {label:tr('analysis.fastestRelief'),value:fastest?.name||'—',note:fastest?formatMinutesHuman(fastest.avgReliefMinutes):tr('analysis.noDataShort')}
+    ],y,{margin,cardWidth});
+    y+=24;
+    y=drawAnalysisLineChartCard(ctx,{title:tr('analysis.dailyUsageChartTitle'),subtitle:tr('analysis.dailyUsageChartSubtitle'),series:analysisDailyUsageSeries(summary)},y,{margin,cardWidth,height:500});
+    y+=22;
+    const overview=summary.totalRecords?lines.overview:[tr('analysis.noRecordsBetween',{start:isoToLocalDate(summary.start),end:isoToLocalDate(summary.end)})];
+    y=drawAnalysisTextCard(ctx,tr('analysis.overview'),overview.slice(0,5),y,{margin,cardWidth});
+    y+=18;
+    drawAnalysisTextCard(ctx,tr('analysis.topMedicines'),lines.top.slice(0,3),y,{margin,cardWidth});
+    drawAnalysisReportFooter(ctx,canvas,1,totalPages);
+    files.push(await analysisFileFromCanvas(canvas,`Assistente_Medicacao_Analise_1_Resumo_${suffix}.png`));
   }
 
-  ctx.fillStyle = "rgba(231,238,246,.62)";
-  ctx.font = `400 18px ${EXPORT_FONT_SERIF}`;
-  const localizedName = tr('app.title');
-  const reportName = localizedName === 'Medication Assistant' ? localizedName : `${localizedName} / Medication Assistant`;
-  const generatedLabel = tr('export.generated', { date:I18N?.formatDateTime(new Date()) || new Date().toLocaleString() });
-  const footerLines = wrapCanvasText(ctx, `${reportName} • v${APP_VERSION} • ${generatedLabel}`, cardWidth);
-  footerLines.forEach((line, index) => ctx.fillText(line, margin, height - margin - 18 + index * 24));
+  // Imagem 2 — tratamento agendado e pontualidade clínica.
+  {
+    const stats=summary.scheduled||{planned:0,taken:0,due:0,missed:0,futurePending:0,onTime:0,early:0,late:0,within15:0,within15Rate:0,adherence:0,punctuality:0,medicineCount:0};
+    const {canvas,ctx,margin,cardWidth}=createAnalysisReportCanvas(2100);
+    let y=drawAnalysisReportHeader(ctx,{title:tr('assistant.scheduledReportTitle'),subtitle:scheduledReportPeriod(summary)});
+    y=drawAnalysisMetricGrid(ctx,[
+      {label:tr('assistant.plannedDoses'),value:stats.planned,note:`${stats.medicineCount||0} ${tr('assistant.scheduledMedicines').toLowerCase()}`},
+      {label:tr('assistant.dueDoses'),value:stats.due,note:`${stats.missed||0} ${tr('assistant.overdueUnrecorded').toLowerCase()}`},
+      {label:tr('assistant.recordedDoses'),value:stats.taken,note:`${stats.futurePending||0} ${tr('assistant.pendingFutureDoses').toLowerCase()}`},
+      {label:tr('assistant.adherence'),value:`${stats.adherence||0}%`,note:tr('assistant.dueDoses')},
+      {label:tr('assistant.punctuality'),value:`${stats.punctuality||0}%`,note:tr('assistant.onTime')},
+      {label:tr('assistant.within15'),value:`${stats.within15||0} · ${stats.within15Rate||0}%`,note:tr('assistant.recordedDoses')}
+    ],y,{margin,cardWidth});
+    y+=24;
+    const midBand=Math.max(0,(stats.onTime||0)-(stats.within15||0));
+    const outside=Math.max(0,(stats.taken||0)-(stats.onTime||0));
+    y=drawAnalysisBarChartCard(ctx,{title:tr('assistant.punctualityChartTitle'),subtitle:tr('assistant.punctualityChartSubtitle'),bars:[
+      {label:tr('assistant.within15'),value:stats.within15||0},
+      {label:tr('assistant.between15And30'),value:midBand},
+      {label:tr('assistant.over30'),value:outside}
+    ]},y,{margin,cardWidth,height:500});
+    y+=22;
+    const statusLines=stats.planned ? [
+      `${tr('assistant.overdueUnrecorded')}: ${stats.missed}.`,
+      `${tr('assistant.pendingFutureDoses')}: ${stats.futurePending}.`,
+      `${tr('assistant.earlyDoses')}: ${stats.early}.`,
+      `${tr('assistant.lateDoses')}: ${stats.late}.`,
+      `${tr('assistant.avgDeviation')}: ${stats.avgDeviationMinutes==null?'—':formatMinutesHuman(stats.avgDeviationMinutes)}.`
+    ] : [tr('assistant.scheduledNoPlans')];
+    y=drawAnalysisTextCard(ctx,tr('assistant.scheduledAnalysis'),statusLines,y,{margin,cardWidth});
+    y+=18;
+    drawAnalysisTextCard(ctx,tr('analysis.methodNotes'),[tr('assistant.scheduledMethodNote')],y,{margin,cardWidth});
+    drawAnalysisReportFooter(ctx,canvas,2,totalPages);
+    files.push(await analysisFileFromCanvas(canvas,`Assistente_Medicacao_Analise_2_Agendados_${suffix}.png`));
+  }
 
-  const blob = await canvasToBlob(canvas);
-  const fileName = `Diario_Medicacao_Analise_${summary.start}_${summary.end}.png`;
-  return new File([blob], fileName, { type: "image/png" });
+  // Imagem 3 — detalhamento e dados complementares do relatório anterior.
+  {
+    const detailSections=[
+      {title:tr('assistant.scheduledBreakdown'),items:scheduledDetailLines(summary.scheduled)},
+      {title:tr('analysis.reliefQuality'),items:lines.relief},
+      {title:tr('analysis.evolution'),items:lines.evolution},
+      {title:tr('analysis.methodNotes'),items:lines.notes}
+    ];
+    const measure=document.createElement('canvas').getContext('2d');
+    const measured=detailSections.map(section=>({section,...measureAnalysisTextCard(measure,section.title,section.items,972)}));
+    const height=Math.max(1800,300 + measured.reduce((sum,item)=>sum+item.height+20,0)+130);
+    const {canvas,ctx,margin,cardWidth}=createAnalysisReportCanvas(height);
+    let y=drawAnalysisReportHeader(ctx,{title:tr('analysis.detailsReportTitle'),subtitle:tr('analysis.medicalFooter')});
+    for (const item of detailSections) {
+      y=drawAnalysisTextCard(ctx,item.title,item.items,y,{margin,cardWidth});
+      y+=18;
+    }
+    drawAnalysisReportFooter(ctx,canvas,3,totalPages);
+    files.push(await analysisFileFromCanvas(canvas,`Assistente_Medicacao_Analise_3_Detalhes_${suffix}.png`));
+  }
+
+  return files;
 }
 
 async function exportAnalysisImage(button = null) {
@@ -2036,16 +2229,16 @@ async function exportAnalysisImage(button = null) {
       button.disabled = true;
       button.textContent = tr('analysis.generating');
     }
-    const file = await makeAnalysisImageFile(summary);
-    if (navigator.canShare?.({ files: [file] })) {
+    const files = await makeAnalysisImageFiles(summary);
+    if (navigator.canShare?.({ files })) {
       try {
-        await navigator.share({ files:[file] });
+        await navigator.share({ files });
         return;
       } catch (error) {
         if (error?.name === "AbortError") return;
       }
     }
-    downloadBlob(file, file.name);
+    files.forEach((file,index)=>setTimeout(()=>downloadBlob(file,file.name),index*180));
   } catch (error) {
     console.error(error);
     showToast(tr('analysis.imageError'));
