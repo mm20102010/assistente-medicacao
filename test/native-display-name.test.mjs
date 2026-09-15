@@ -56,3 +56,13 @@ test("Watch mantém a pasta sincronizada que inclui os InfoPlist.strings localiz
     /fileSystemSynchronizedGroups = \([\s\S]*?Assistente Watch Watch App[\s\S]*?\);/,
   );
 });
+
+
+test("fallback nativo do iPhone não herda o nome Diário", () => {
+  const plist = fs.readFileSync("ios/App/App/Info.plist", "utf8");
+  assert.match(
+    plist,
+    /<key>CFBundleDisplayName<\/key>\s*<string>Medication<\/string>/,
+  );
+  assert.doesNotMatch(plist, /<string>Diario<\/string>/);
+});

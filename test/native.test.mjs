@@ -24,7 +24,7 @@ test('configuração Capacitor B2 é reproduzível', async () => {
   assert.match(pbx, /capacitor\.config\.json in Resources/, 'Xcode deve empacotar capacitor.config.json');
 
   const infoPlist = await readFile(new URL('../ios/App/App/Info.plist', import.meta.url), 'utf8');
-  assert.match(infoPlist, /<key>CFBundleDisplayName<\/key>\s*<string>Diario<\/string>/, 'nome na Home Screen deve ser Diario');
+  assert.match(infoPlist, /<key>CFBundleDisplayName<\/key>\s*<string>Medication<\/string>/, 'fallback da Home Screen deve ser Medication');
 
   const watchContentsUrl = new URL('../ios/App/Assistente Watch Watch App/Assets.xcassets/AppIcon.appiconset/Contents.json', import.meta.url);
   const watchContents = JSON.parse(await readFile(watchContentsUrl, 'utf8'));
