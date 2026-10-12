@@ -1319,14 +1319,14 @@ function formatHistoryDay(dateValue) {
 function historyRecordRow(record) {
   const undefinedRelief = normalizeKey(record.relief) === normalizeKey(DEFAULT_RELIEF);
   const scheduled = Boolean(record.scheduleId);
-  return `<div class="record-row assistente-history-row" data-id="${escapeHtml(record.id)}" role="button" tabindex="0">
+  return window.MMRegistro.wrapSwipeRow(`<div class="record-row assistente-history-row" data-id="${escapeHtml(record.id)}" role="button" tabindex="0">
     <div class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#medicine"></use></svg></div>
     <div class="record-main">
       <strong>${escapeHtml(record.medicine)}${scheduled ? `<span class="record-scheduled-badge">${escapeHtml(tr('assistant.scheduledBadge'))}</span>` : ''}</strong>
       <span class="${undefinedRelief ? "undefined" : ""}">${escapeHtml(tr('field.relief'))}: ${escapeHtml(localizedRelief(record.relief))}</span>
     </div>
     <div class="record-time">${escapeHtml(formatTimeOnly(record))}</div>
-  </div>`;
+  </div>`, { id:record.id, editLabel:tr('common.edit'), deleteLabel:tr('common.delete') });
 }
 
 function renderRecords() {
@@ -1339,6 +1339,7 @@ function renderRecords() {
 
   if (filtered.length === 0 && hasFilter) {
     els.records.innerHTML = `<div class="panel empty-state"><h2>${escapeHtml(tr('history.noResult'))}</h2><p>${escapeHtml(tr('history.noResultFiltered'))}</p></div>`;
+    els.records.mmSwipeController?.reset();
     return;
   }
 
@@ -1354,6 +1355,10 @@ function renderRecords() {
   els.records.innerHTML = groups + (visible.length < filtered.length
     ? `<div class="history-load-more"><button class="secondary-btn" data-action="load-more" type="button">${escapeHtml(tr('history.loadMore', { count:Math.min(HISTORY_RENDER_BATCH, filtered.length - visible.length) }))}</button></div>`
     : "");
+  window.MMRegistro.bindSwipeActions(els.records, {
+    onEdit:id => openEdit(id),
+    onDelete:id => { const record = state.records.find(r => r.id === id); if (record) void deleteRecordSelected(record); }
+  });
 }
 
 function clearHistoryFilters() {
@@ -2595,6 +2600,11 @@ async function saveEdit() {
 async function deleteCurrentRecord() {
   const record = state.records.find(r => r.id === els.editId.value);
   if (!record) return;
+  return deleteRecordSelected(record);
+}
+
+async function deleteRecordSelected(record) {
+  if (!record) return;
   const ok = await confirmAction(tr('confirm.deleteRecord'), `${formatDisplayDate(record)} • ${record.medicine}`, { destructive:true, confirmLabel:tr('confirm.delete') });
   if (!ok) return;
   if (window.MMNative?.isIOS && typeof window.MMNative?.discardWatchMedicationEvent === 'function') {
@@ -3541,6 +3551,10 @@ async function saveScheduleFromForm(event) {
 async function deleteCurrentSchedule() {
   const schedule=state.schedules.find(s=>s.id===els.scheduleId.value);
   if(!schedule)return;
+  return deleteScheduleSelected(schedule);
+}
+async function deleteScheduleSelected(schedule) {
+  if(!schedule)return;
   const ok=confirm(tr('assistant.deleteConfirm'));
   if(!ok)return;
   schedule.status='cancelled';
@@ -3589,13 +3603,17 @@ function renderSchedules() {
         const p=scheduleProgress(schedule);
         const next=nextPendingScheduleOccurrence(schedule,now);
         const nextValue=next ? formatScheduleDate(next.at) : '';
-        return `<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
+        return window.MMRegistro.wrapSwipeRow(`<button class="record-row assistente-schedule-row" type="button" data-schedule-id="${escapeHtml(schedule.id)}">
           <span class="record-icon" aria-hidden="true"><svg class="mm-icon" viewBox="0 0 24 24"><use href="mm-registro-icons.svg#clock"></use></svg></span>
           <span class="record-main"><strong class="assistente-schedule-title">${escapeHtml(r.medicine)} <span class="assistente-schedule-interval">· ${escapeHtml(tr('assistant.everyHours',{hours:r.intervalMinutes/60}).toLowerCase())}</span></strong><span class="assistente-schedule-period-line"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.fromLabel'))}</strong>: ${escapeHtml(formatScheduleDate(new Date(r.planStartAt)))}</span><span class="assistente-schedule-period-line"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.untilLabel'))}</strong>: ${escapeHtml(formatScheduleDate(new Date(r.endAt)))}</span>${nextValue?`<span class="assistente-schedule-next"><strong class="assistente-schedule-meta-label">${escapeHtml(tr('assistant.nextDoseLabel'))}</strong>: ${escapeHtml(nextValue)}</span>`:(key==='done'?`<span class="assistente-schedule-next">${escapeHtml(tr('assistant.noNextDose'))}</span>`:'')}</span>
           <span class="assistente-schedule-progress"><strong>${p.taken}/${p.planned}</strong></span>
-        </button>`;
+        </button>`, { id:schedule.id, editLabel:tr('common.edit'), deleteLabel:tr('common.delete') });
       }).join('')}</div>
     </section>`).join('') || `<div class="panel empty-state mm-card"><h2>${escapeHtml(tr('assistant.noSchedules'))}</h2><p>${escapeHtml(tr('assistant.noSchedulesHelp'))}</p></div>`;
+  window.MMRegistro.bindSwipeActions(els.schedulesList, {
+    onEdit:id => openScheduleDialog(id),
+    onDelete:id => { const schedule = state.schedules.find(s => s.id === id && s.status !== 'cancelled'); if (schedule) void deleteScheduleSelected(schedule); }
+  });
 }
 function renderReminderToggle(){if(els.remindersToggle)els.remindersToggle.checked=state.remindersEnabled!==false;}
 async function reconcileMedicationNotifications(){

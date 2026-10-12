@@ -40,7 +40,7 @@ jobs:
 
       - name: Validate repository
         id: tests
-        run: npm run native:sync && npm run repo:gate
+        run: npm run repo:gate
 
       - name: Deploy Diario to Cloudflare Pages
         id: deploy

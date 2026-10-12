@@ -394,6 +394,146 @@
     };
   }
 
+  // Componente opt-in de ações por swipe do MM Registro. Não altera telas sem wrapper.
+  // Somente a UI é compartilhada; persistência e confirmação pertencem ao app.
+  function escapeSwipeText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  function wrapSwipeRow(rowHtml, { id, editLabel, deleteLabel }) {
+    const safeId = escapeSwipeText(id);
+    const edit = escapeSwipeText(editLabel);
+    const remove = escapeSwipeText(deleteLabel);
+    return `<div class="mm-swipe-item" data-mm-swipe-id="${safeId}">
+      <button class="mm-swipe-action mm-swipe-action--edit" type="button" data-mm-swipe-action="edit" aria-label="${edit}" aria-hidden="true" tabindex="-1">
+        <svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#edit"></use></svg><span>${edit}</span>
+      </button>
+      <button class="mm-swipe-action mm-swipe-action--delete" type="button" data-mm-swipe-action="delete" aria-label="${remove}" aria-hidden="true" tabindex="-1">
+        <svg class="mm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="mm-registro-icons.svg#trash"></use></svg><span>${remove}</span>
+      </button>
+      <div class="mm-swipe-content">${rowHtml}</div>
+    </div>`;
+  }
+
+  function bindSwipeActions(list, { onEdit, onDelete }) {
+    if (!list || typeof onEdit !== 'function' || typeof onDelete !== 'function') {
+      throw new Error('MMRegistro.bindSwipeActions requer lista, onEdit e onDelete.');
+    }
+    // Event delegation: quantidade constante de listeners, inclusive para listas extensas.
+    if (list.mmSwipeController) {
+      list.mmSwipeController.configure(onEdit, onDelete);
+      list.mmSwipeController.reset();
+      return list.mmSwipeController;
+    }
+    let editCallback = onEdit;
+    let deleteCallback = onDelete;
+    let openItem = null;
+    let gesture = null;
+    let suppressClick = null;
+    const itemFrom = target => target?.closest?.('[data-mm-swipe-id]');
+    const offset = action => action === 'edit' ? 88 : action === 'delete' ? -88 : 0;
+    const setOpen = (item, action) => {
+      if (!item) return;
+      const next = action === 'edit' || action === 'delete' ? action : '';
+      item.dataset.mmSwipeOpen = next;
+      item.style.setProperty('--mm-swipe-offset', `${offset(next)}px`);
+      item.querySelectorAll('[data-mm-swipe-action]').forEach(button => {
+        const visible = button.dataset.mmSwipeAction === next;
+        button.setAttribute('aria-hidden', String(!visible));
+        button.tabIndex = visible ? 0 : -1;
+      });
+    };
+    const close = () => {
+      if (openItem) setOpen(openItem, '');
+      openItem = null;
+    };
+    const controller = {
+      configure(edit, remove) { editCallback = edit; deleteCallback = remove; },
+      reset() { close(); gesture = null; suppressClick = null; },
+      close
+    };
+    list.mmSwipeController = controller;
+
+    // Captura antes dos handlers legados de click: um gesto não pode abrir o editor por acidente.
+    list.addEventListener('click', event => {
+      const item = itemFrom(event.target);
+      if (!item || !list.contains(item)) return;
+      const action = event.target.closest?.('[data-mm-swipe-action]');
+      if (action) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (item.dataset.mmSwipeOpen !== action.dataset.mmSwipeAction) return;
+        const id = item.dataset.mmSwipeId;
+        const selected = action.dataset.mmSwipeAction;
+        close();
+        if (selected === 'edit') editCallback(id);
+        if (selected === 'delete') deleteCallback(id);
+        return;
+      }
+      if (suppressClick === item || openItem) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        suppressClick = null;
+        close();
+      }
+    }, true);
+
+    list.addEventListener('touchstart', event => {
+      gesture = null;
+      suppressClick = null;
+      if (event.touches.length !== 1) return;
+      const item = itemFrom(event.target);
+      if (!item || !list.contains(item)) return;
+      if (event.target.closest?.('[data-mm-swipe-action]')) return;
+      // Não sequestra controles internos (ex.: alívio rápido no Diário).
+      const control = event.target.closest?.('button,input,select,textarea,a');
+      const rowButton = item.querySelector('.mm-swipe-content > button');
+      if (control && control !== rowButton) return;
+      const touch = event.touches[0];
+      // Mantém a região reservada ao gesto de voltar do iOS.
+      if (touch.clientX < 24 && !item.dataset.mmSwipeOpen) return;
+      if (openItem && openItem !== item) close();
+      gesture = { item, x:touch.clientX, y:touch.clientY, initial:item.dataset.mmSwipeOpen || '', horizontal:false, vertical:false };
+    }, { passive:true });
+    list.addEventListener('touchmove', event => {
+      if (!gesture || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const dx = touch.clientX - gesture.x;
+      const dy = touch.clientY - gesture.y;
+      if (!gesture.horizontal && !gesture.vertical && Math.max(Math.abs(dx), Math.abs(dy)) > 9) {
+        if (Math.abs(dx) > Math.abs(dy) * 1.3) gesture.horizontal = true;
+        else gesture.vertical = true;
+      }
+      if (!gesture.horizontal) return;
+      event.preventDefault();
+      gesture.item.classList.add('mm-swipe-dragging');
+      gesture.item.style.setProperty('--mm-swipe-offset', `${Math.max(-88, Math.min(88, offset(gesture.initial) + dx))}px`);
+    }, { passive:false });
+    list.addEventListener('touchend', event => {
+      if (!gesture) return;
+      const completed = gesture;
+      gesture = null;
+      completed.item.classList.remove('mm-swipe-dragging');
+      if (!completed.horizontal) return;
+      suppressClick = completed.item;
+      const touch = event.changedTouches[0];
+      const dx = touch ? touch.clientX - completed.x : 0;
+      const value = offset(completed.initial) + dx;
+      const action = Math.abs(dx) < 30 ? completed.initial : value > 44 ? 'edit' : value < -44 ? 'delete' : '';
+      if (openItem && openItem !== completed.item) close();
+      setOpen(completed.item, action);
+      openItem = action ? completed.item : null;
+    }, { passive:true });
+    list.addEventListener('touchcancel', () => {
+      if (!gesture) return;
+      gesture.item.classList.remove('mm-swipe-dragging');
+      setOpen(gesture.item, gesture.initial);
+      openItem = gesture.initial ? gesture.item : null;
+      gesture = null;
+    }, { passive:true });
+    return controller;
+  }
+
   global.MMRegistro = Object.assign(global.MMRegistro || {}, {
     version: VERSION,
     primaryViews: PRIMARY_VIEWS,
@@ -405,6 +545,8 @@
     bindDateRange,
     openSecondarySheet,
     closeSecondarySheet,
-    bindSecondarySheets
+    bindSecondarySheets,
+    wrapSwipeRow,
+    bindSwipeActions
   });
 })(typeof window !== 'undefined' ? window : globalThis);

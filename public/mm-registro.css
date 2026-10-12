@@ -2706,3 +2706,18 @@ body.mm-registro [data-mm-view-panel] > .mm-view-content > .mm-secondary-header:
   background-size:100vw 100dvh;
   background-position:center top;
 }
+
+/* Ações opt-in no Histórico/Agendamentos; não mudam outras listas do Core. */
+.mm-swipe-item{position:relative;overflow:hidden;isolation:isolate}
+.mm-swipe-content{position:relative;z-index:1;min-width:0;background:var(--mm-swipe-surface,#17283b);transform:translate3d(var(--mm-swipe-offset,0px),0,0);transition:transform .2s ease-out;touch-action:pan-y}
+.mm-swipe-item.mm-swipe-dragging .mm-swipe-content{transition:none}
+.mm-swipe-action{position:absolute;top:0;bottom:0;width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;border:0;border-radius:0;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;font-weight:650;line-height:1.2}
+.mm-swipe-action .mm-icon{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mm-swipe-action--edit{left:0;background:#287bc1}
+.mm-swipe-action--delete{right:0;background:#d33030}
+.mm-swipe-action:focus-visible{outline:3px solid #fff;outline-offset:-4px}
+@media(prefers-reduced-motion:reduce){.mm-swipe-content{transition:none}}
+/* Separadores e cantos dos dois layouts de Histórico opt-in. */
+.history-day-card > .mm-swipe-item:not(:last-child){border-bottom:1px solid rgba(159,198,236,.15)}
+.mm-swipe-content > .record-row{border-bottom:0}
+.records > .mm-swipe-item{border-radius:26px}
