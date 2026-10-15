@@ -7,12 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E40300000000000000000001 /* Assistente Watch Complications.appex in Embed Watch Extensions */ = {isa = PBXBuildFile; fileRef = E40300000000000000000002 /* Assistente Watch Complications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		E40300000000000000000013 /* AssistenteComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4030000000000000000000E /* AssistenteComplications.swift */; };
-		E40300000000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E40300000000000000000012 /* PrivacyInfo.xcprivacy */; };
-		E40300000000000000000017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E40300000000000000000016 /* Localizable.xcstrings */; };
-		E34110000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E34110000000000000000002 /* PrivacyInfo.xcprivacy */; };
-		A6D1A0010000000000000005 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A6D1A0010000000000000004 /* InfoPlist.strings */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
@@ -21,18 +15,17 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		A6D1A0010000000000000005 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A6D1A0010000000000000004 /* InfoPlist.strings */; };
 		D504865F302B968300E91836 /* Assistente Watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D5048655302B968200E91836 /* Assistente Watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D5048665302B9DE000E91836 /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5048664302B9DD600E91836 /* WatchSessionManager.swift */; };
+		E34110000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E34110000000000000000002 /* PrivacyInfo.xcprivacy */; };
+		E40300000000000000000001 /* Assistente Watch Complications.appex in Embed Watch Extensions */ = {isa = PBXBuildFile; fileRef = E40300000000000000000002 /* Assistente Watch Complications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E40300000000000000000013 /* AssistenteComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4030000000000000000000E /* AssistenteComplications.swift */; };
+		E40300000000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E40300000000000000000012 /* PrivacyInfo.xcprivacy */; };
+		E40300000000000000000017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E40300000000000000000016 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		E40300000000000000000003 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E40300000000000000000006;
-			remoteInfo = "Assistente Watch Complications";
-		};
 		D504865D302B968300E91836 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
@@ -40,20 +33,16 @@
 			remoteGlobalIDString = D5048654302B968200E91836;
 			remoteInfo = "Assistente Watch Watch App";
 		};
+		E40300000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E40300000000000000000006;
+			remoteInfo = "Assistente Watch Complications";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E40300000000000000000004 /* Embed Watch Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				E40300000000000000000001 /* Assistente Watch Complications.appex in Embed Watch Extensions */,
-			);
-			name = "Embed Watch Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D5048660302B968300E91836 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -65,18 +54,20 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E40300000000000000000004 /* Embed Watch Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E40300000000000000000001 /* Assistente Watch Complications.appex in Embed Watch Extensions */,
+			);
+			name = "Embed Watch Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E40300000000000000000002 /* Assistente Watch Complications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Assistente Watch Complications.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E4030000000000000000000E /* AssistenteComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistenteComplications.swift; sourceTree = "<group>"; };
-		E4030000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E40300000000000000000012 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		E40300000000000000000016 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		E34110000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		A6D1A0010000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		A6D1A0010000000000000002 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		A6D1A0010000000000000003 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -87,35 +78,24 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		A6D1A0010000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A6D1A0010000000000000002 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A6D1A0010000000000000003 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D5048655302B968200E91836 /* Assistente Watch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Assistente Watch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5048664302B9DD600E91836 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
+		E34110000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E40300000000000000000002 /* Assistente Watch Complications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Assistente Watch Complications.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4030000000000000000000E /* AssistenteComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistenteComplications.swift; sourceTree = "<group>"; };
+		E4030000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E40300000000000000000012 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E40300000000000000000016 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D5048656302B968200E91836 /* Assistente Watch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Assistente Watch Watch App"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
-/* Begin PBXVariantGroup section */
-		A6D1A0010000000000000004 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				A6D1A0010000000000000001 /* en */,
-				A6D1A0010000000000000002 /* pt */,
-				A6D1A0010000000000000003 /* es */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
-		E40300000000000000000008 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		504EC3011FED79650016851F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -125,6 +105,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D5048652302B968200E91836 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E40300000000000000000008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -302,15 +289,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		E40300000000000000000009 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E40300000000000000000015 /* PrivacyInfo.xcprivacy in Resources */,
-				E40300000000000000000017 /* Localizable.xcstrings in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		504EC3021FED79650016851F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -332,17 +310,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		E40300000000000000000007 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
+		E40300000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E40300000000000000000013 /* AssistenteComplications.swift in Sources */,
+				E40300000000000000000015 /* PrivacyInfo.xcprivacy in Resources */,
+				E40300000000000000000017 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
 		504EC3001FED79650016851F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -360,18 +339,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E40300000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E40300000000000000000013 /* AssistenteComplications.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		E4030000000000000000000A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E40300000000000000000006 /* Assistente Watch Complications */;
-			targetProxy = E40300000000000000000003 /* PBXContainerItemProxy */;
-		};
 		D504865E302B968300E91836 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D5048654302B968200E91836 /* Assistente Watch Watch App */;
 			targetProxy = D504865D302B968300E91836 /* PBXContainerItemProxy */;
+		};
+		E4030000000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E40300000000000000000006 /* Assistente Watch Complications */;
+			targetProxy = E40300000000000000000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -390,6 +377,16 @@
 				504EC3111FED79650016851F /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A6D1A0010000000000000004 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A6D1A0010000000000000001 /* en */,
+				A6D1A0010000000000000002 /* pt */,
+				A6D1A0010000000000000003 /* es */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -522,14 +519,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -544,14 +541,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -568,12 +565,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Watch App/AssistenteWatch.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Assistente";
+				INFOPLIST_KEY_CFBundleDisplayName = Assistente;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = br.com.mmregistro.assistentemedicacao;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -581,10 +579,9 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Watch App/AssistenteWatch.entitlements";
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -609,12 +606,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Watch App/AssistenteWatch.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Assistente";
+				INFOPLIST_KEY_CFBundleDisplayName = Assistente;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = br.com.mmregistro.assistentemedicacao;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -622,9 +620,8 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_FAST_MATH = YES;
-				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Watch App/AssistenteWatch.entitlements";
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -644,13 +641,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Complications/AssistenteComplications.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 84V593Q5NP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Assistente Watch Complications/Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Complications/AssistenteComplications.entitlements";
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -667,13 +664,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Complications/AssistenteComplications.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 84V593Q5NP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Assistente Watch Complications/Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				CODE_SIGN_ENTITLEMENTS = "Assistente Watch Complications/AssistenteComplications.entitlements";
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.mmregistro.assistentemedicacao.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
