@@ -584,19 +584,28 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
         let raw = call.getArray("notifications", JSObject.self) ?? []
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
-            let owned = pending.map(\.identifier).filter { $0.hasPrefix("medsched.") }
-            center.removePendingNotificationRequests(withIdentifiers: owned)
-            guard enabled else { call.resolve(["accepted": true, "scheduled": 0]); return }
+            let owned = pending.filter { $0.identifier.hasPrefix("medsched.") }
+            guard enabled else {
+                center.removePendingNotificationRequests(withIdentifiers: owned.map(\.identifier))
+                call.resolve(["accepted": true, "scheduled": 0, "requested": 0])
+                return
+            }
             center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-                guard granted, error == nil else { call.resolve(["accepted": false, "scheduled": 0]); return }
+                // Do not destroy already-scheduled reminders when authorization fails.
+                guard granted, error == nil else {
+                    call.resolve(["accepted": false, "scheduled": owned.count, "requested": raw.count])
+                    return
+                }
                 let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                 let fallback = ISO8601DateFormatter()
-                let group = DispatchGroup(); var scheduled = 0
+                var desired: [UNNotificationRequest] = []
+                var desiredIDs = Set<String>()
                 for item in raw.prefix(60) {
                     guard let id = item["id"] as? String, id.hasPrefix("medsched."),
                           let title = item["title"] as? String,
                           let atRaw = item["at"] as? String,
-                          let date = formatter.date(from: atRaw) ?? fallback.date(from: atRaw), date > Date() else { continue }
+                          let date = formatter.date(from: atRaw) ?? fallback.date(from: atRaw), date > Date(),
+                          desiredIDs.insert(id).inserted else { continue }
                     let content = UNMutableNotificationContent(); content.title = title; content.body = (item["body"] as? String) ?? ""; content.sound = .default; content.categoryIdentifier = "MEDICATION_SCHEDULED"
                     let scheduleId = String(item["scheduleId"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                     let medicine = String(item["medicine"] as? String ?? title).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -610,12 +619,55 @@ public class AssistenteWatchPlugin: CAPPlugin, CAPBridgedPlugin {
                         ]
                     }
                     let comps = Calendar.current.dateComponents([.year,.month,.day,.hour,.minute], from: date)
-                    group.enter(); center.add(UNNotificationRequest(identifier:id, content:content, trigger:UNCalendarNotificationTrigger(dateMatching: comps, repeats:false))) { error in if error == nil { scheduled += 1 }; group.leave() }
+                    desired.append(UNNotificationRequest(identifier:id, content:content, trigger:UNCalendarNotificationTrigger(dateMatching: comps, repeats:false)))
                 }
-                group.notify(queue:.main) { call.resolve(["accepted": true, "scheduled": scheduled]) }
+
+                // Delete only obsolete identifiers. Keeping unchanged requests avoids a
+                // notification-free gap whenever the app opens or a dose is recorded.
+                let obsolete = owned.map(\.identifier).filter { !desiredIDs.contains($0) }
+                if !obsolete.isEmpty { center.removePendingNotificationRequests(withIdentifiers: obsolete) }
+                let existing = Dictionary(uniqueKeysWithValues: owned.map { ($0.identifier, $0) })
+                let group = DispatchGroup()
+                let lock = NSLock()
+                var preserved = 0, added = 0, failed = 0
+                for request in desired {
+                    if let previous = existing[request.identifier],
+                       previous.content.title == request.content.title,
+                       previous.content.body == request.content.body,
+                       previous.content.categoryIdentifier == request.content.categoryIdentifier,
+                       (previous.content.userInfo["type"] as? String) == (request.content.userInfo["type"] as? String),
+                       (previous.content.userInfo["scheduleId"] as? String) == (request.content.userInfo["scheduleId"] as? String),
+                       (previous.content.userInfo["medicine"] as? String) == (request.content.userInfo["medicine"] as? String),
+                       (previous.content.userInfo["scheduledAt"] as? String) == (request.content.userInfo["scheduledAt"] as? String),
+                       let oldTrigger = previous.trigger as? UNCalendarNotificationTrigger,
+                       let newTrigger = request.trigger as? UNCalendarNotificationTrigger,
+                       oldTrigger.dateComponents == newTrigger.dateComponents {
+                        preserved += 1
+                        continue
+                    }
+                    // Re-adding an existing identifier replaces that request without
+                    // first cancelling it; unrelated scheduled doses remain untouched.
+                    group.enter()
+                    center.add(request) { error in
+                        lock.lock()
+                        if error == nil { added += 1 } else { failed += 1 }
+                        lock.unlock()
+                        group.leave()
+                    }
+                }
+                group.notify(queue:.main) {
+                    call.resolve([
+                        "accepted": failed == 0,
+                        "scheduled": preserved + added,
+                        "requested": desired.count,
+                        "preserved": preserved,
+                        "failed": failed
+                    ])
+                }
             }
         }
     }
+
 }
 
 // Registers the local plugin as soon as Capacitor finishes loading its bridge.

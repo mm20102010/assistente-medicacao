@@ -1,6 +1,6 @@
 {
   "name": "mm-assistente-medicacao",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Assistente de Medicação - registros, agendamentos, lembretes locais e Apple Watch",
   "scripts": {
@@ -34,5 +34,5 @@
     "typescript": "^5.9.2"
   },
   "type": "module",
-  "marketingVersion": "1.0.1"
+  "marketingVersion": "1.0.2"
 }

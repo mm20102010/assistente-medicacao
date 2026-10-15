@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.0.2";
 const I18N = window.MMI18n;
 const tr = (key, vars = {}) => I18N?.t(key, vars) ?? key;
 const trSource = (text, vars = {}) => I18N?.translateSource(text, vars) ?? String(text ?? "");
@@ -22,7 +22,7 @@ const DEFAULT_MEDICINES = [
 const DEFAULT_RELIEF = "Não definido";
 const RELIEF_PRESET_VALUES = ["30 minutos", "1 hora", "2 horas", "3 horas", "Sem alívio", "Não definido"];
 const HISTORY_RENDER_BATCH = 250;
-const DIAGNOSTIC_REVISION = '1.0.1';
+const DIAGNOSTIC_REVISION = '1.0.2';
 const DIAGNOSTIC_MODE_KEY = 'assistente.diagnosticMode.v1';
 const DIAGNOSTIC_TRACE_KEY = 'assistente.diagnosticTrace.v1';
 const DIAGNOSTIC_TRACE_LIMIT = 500;
@@ -33,6 +33,7 @@ let db = null;
 let state = { version: 2, records: [], medicines: [...DEFAULT_MEDICINES], schedules: [], remindersEnabled: true };
 let lastNativeMedicinesSignature = null;
 let nativeMedicineSyncTail = Promise.resolve();
+let medicationNotificationSyncTail = Promise.resolve();
 let pendingImport = null;
 let toastTimer = null;
 let activeSheet = null;
@@ -3616,11 +3617,12 @@ function renderSchedules() {
   });
 }
 function renderReminderToggle(){if(els.remindersToggle)els.remindersToggle.checked=state.remindersEnabled!==false;}
-async function reconcileMedicationNotifications(){
+function reconcileMedicationNotifications(){
+  const run = async () => {
   if(!window.MMNative?.isIOS||typeof window.MMNative?.reconcileMedicationNotifications!=='function')return;
   const now=new Date();
   const occurrences=state.remindersEnabled===false?[]:allScheduleOccurrences(now,new Date(now.getTime()+60*24*3600000)).filter(o=>o.at>now&&!isOccurrenceConsumed(o)).slice(0,60);
-  await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({
+  const result=await window.MMNative.reconcileMedicationNotifications(occurrences.map(o=>({
     id:`medsched.${o.scheduleId}.${o.at.getTime()}`,
     title:o.medicine,
     body:tr('assistant.notificationBody'),
@@ -3629,6 +3631,23 @@ async function reconcileMedicationNotifications(){
     scheduleId:o.scheduleId,
     scheduledAt:o.at.toISOString()
   })),state.remindersEnabled!==false);
+  diagnosticTrace('SCHEDULE_NOTIFICATIONS_RECONCILED', {
+    requested:occurrences.length,
+    scheduled:result?.scheduled ?? null,
+    accepted:result?.accepted === true,
+    preserved:result?.preserved ?? null,
+    failed:result?.failed ?? null,
+    firstAt:occurrences[0]?.at.toISOString() ?? null,
+    lastAt:occurrences.at(-1)?.at.toISOString() ?? null
+  });
+  if (result?.accepted !== true || result.scheduled !== occurrences.length) {
+    console.warn('Lembretes de medicação: agendamento nativo incompleto.', {requested:occurrences.length, result});
+  }
+  };
+  // Reconcile serially so an older snapshot cannot cancel newer reminders.
+  const operation = medicationNotificationSyncTail.then(run, run);
+  medicationNotificationSyncTail = operation.catch(() => {});
+  return operation;
 }
 function renderAdherenceAnalysis(){ /* integrado a renderAnalysisPreview para manter tela e exportação consistentes */ }
 
@@ -3762,7 +3781,7 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (!/^https?:$/.test(location.protocol)) return;
   try {
-    const registration = await navigator.serviceWorker.register("./sw.js?v=1.0.1", {
+    const registration = await navigator.serviceWorker.register("./sw.js?v=1.0.2", {
       updateViaCache: "none"
     });
     try { await registration.update(); } catch (_) {}

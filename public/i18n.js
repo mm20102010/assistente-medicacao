@@ -1,4 +1,4 @@
-/* App translations 1.0.1 */
+/* App translations 1.0.2 */
 (function(){
   if (!window.MMI18n) throw new Error('MM Registro i18n não carregado.');
   window.MMI18n.registerCatalog("diario", {
