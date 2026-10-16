@@ -47,6 +47,23 @@ test('ponte iOS expõe contexto de notificação ao WebView e emite evento de ab
   assert.match(runtime, /mm:scheduled-medication-notification-opened/);
 });
 
+test('consulta do estado UIKit e consumo do contexto de notificação ocorrem na main thread', async () => {
+  const ios = await read('ios/App/App/WatchSessionManager.swift');
+  const start = ios.indexOf('    @objc func consumeScheduledMedicationNotificationContext(_ call: CAPPluginCall) {');
+  const end = ios.indexOf('    @objc func reconcileMedicationNotifications(_ call: CAPPluginCall) {', start);
+  assert.ok(start >= 0 && end > start, 'método nativo não encontrado');
+  const block = ios.slice(start, end);
+  assert.match(block, /DispatchQueue\.main\.async\s*\{/);
+  const dispatch = block.indexOf('DispatchQueue.main.async {');
+  const readState = block.indexOf('UIApplication.shared.applicationState.rawValue');
+  const consume = block.indexOf('MedicationNotificationContextStore.shared.consume()');
+  const resolveUnavailable = block.indexOf('"available": false');
+  const resolveAvailable = block.indexOf('"available": true');
+  assert.ok(dispatch >= 0 && readState > dispatch && consume > readState);
+  assert.ok(resolveUnavailable > consume && resolveAvailable > resolveUnavailable, 'ambos os caminhos da Promise devem permanecer no bloco main');
+  assert.equal((block.match(/UIApplication\.shared\.applicationState/g) || []).length, 1);
+  assert.equal((block.match(/call\.resolve\(/g) || []).length, 2);
+});
 
 test('foreground faz recuperação durável do contexto da notificação mesmo se o evento nativo for perdido', async () => {
   const app = await read('public/app.js');
