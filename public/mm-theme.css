@@ -316,3 +316,25 @@ html[data-theme="light"] body.mm-registro :is(.assistente-history-row,.assistent
 html[data-theme="light"] body.mm-registro .assistente-home-action__copy strong{color:#251d19!important;}
 html[data-theme="light"] body.mm-registro .assistente-home-action__copy small,
 html[data-theme="light"] body.mm-registro .assistente-home-action>b{color:#5b493d!important;}
+
+
+/* Acessibilidade no modo claro: texto de componentes legados que ainda usa
+   tons claros do modo escuro. Nenhuma regra funcional ou geométrica muda. */
+html[data-theme="light"] body.mm-registro .datetime-display,
+html[data-theme="light"] body.mm-registro .mm-edit-datetime-display{
+  color:var(--mm-text-primary)!important;
+  -webkit-text-fill-color:var(--mm-text-primary)!important;
+}
+html[data-theme="light"] body.mm-registro #analyticsSheet .analysis-period-grid > label > span,
+html[data-theme="light"] body.mm-registro #chartDialog .analysis-period-grid > label > span{
+  color:var(--mm-text-secondary)!important;
+}
+html[data-theme="light"] body.mm-registro :is(.empty-state p,.install-copy,.install-copy p,.install-copy li,.install-copy strong,.switch-row strong,.dialog p,.import-choice label){
+  color:var(--mm-text-secondary)!important;
+}
+html[data-theme="light"] body.mm-registro :is(.relief-presets button,.medicine-row button){
+  color:var(--mm-text-primary)!important;
+  background:var(--mm-surface-elevated)!important;
+  border-color:var(--mm-border)!important;
+}
+html[data-theme="light"] body.mm-registro .medicine-row .med-delete{color:var(--mm-danger)!important;}
