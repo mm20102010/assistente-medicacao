@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
 const distDir = path.join(root, 'dist');
 const stageDir = path.join(distDir, 'web-package');
-const zipPath = path.join(distDir, 'Assistente_Medicacao_WEB_1.0.2.zip');
+const zipPath = path.join(distDir, 'Assistente_Medicacao_WEB_1.0.3.zip');
 
 if (!(await stat(path.join(publicDir, 'index.html')).catch(() => null))?.isFile()) {
   throw new Error('public/index.html não encontrado.');

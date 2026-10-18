@@ -1,22 +1,24 @@
-const CACHE = "assistente-medicacao-v1.0.2-cg";
+const CACHE = "assistente-medicacao-v1.0.3-cg";
 const APP_SHELL = "./";
 const ASSETS = [
   APP_SHELL,
-  "./styles.css?v=1.0.2",
+  "./styles.css?v=1.0.3",
   "./mm-registro.css?v=4.0",
+  "./mm-theme.js?v=1.0.3",
+  "./mm-theme.css?v=1.0.3",
   "./mm-registro-icons.svg",
   "./mm-registro-i18n.js?v=4.0",
-  "./i18n.js?v=1.0.2",
+  "./i18n.js?v=1.0.3",
   "./mm-registro.js?v=4.0",
-  "./native-runtime.js?v=1.0.2",
-  "./app.js?v=1.0.2",
-  "./manifest.webmanifest?v=1.0.2",
+  "./native-runtime.js?v=1.0.3",
+  "./app.js?v=1.0.3",
+  "./manifest.webmanifest?v=1.0.3",
   "./privacy.html",
   "./support.html",
-  "./icons/icon-180.png?v=1.0.2",
-  "./icons/icon-192.png?v=1.0.2",
-  "./icons/icon-512.png?v=1.0.2",
-  "./icons/icon-maskable-512.png?v=1.0.2"
+  "./icons/icon-180.png?v=1.0.3",
+  "./icons/icon-192.png?v=1.0.3",
+  "./icons/icon-512.png?v=1.0.3",
+  "./icons/icon-maskable-512.png?v=1.0.3"
 ];
 
 self.addEventListener("install", event => {

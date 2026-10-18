@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.0.2";
+const APP_VERSION = "1.0.3";
 const I18N = window.MMI18n;
 const tr = (key, vars = {}) => I18N?.t(key, vars) ?? key;
 const trSource = (text, vars = {}) => I18N?.translateSource(text, vars) ?? String(text ?? "");
@@ -22,7 +22,7 @@ const DEFAULT_MEDICINES = [
 const DEFAULT_RELIEF = "Não definido";
 const RELIEF_PRESET_VALUES = ["30 minutos", "1 hora", "2 horas", "3 horas", "Sem alívio", "Não definido"];
 const HISTORY_RENDER_BATCH = 250;
-const DIAGNOSTIC_REVISION = '1.0.2';
+const DIAGNOSTIC_REVISION = '1.0.3';
 const DIAGNOSTIC_MODE_KEY = 'assistente.diagnosticMode.v1';
 const DIAGNOSTIC_TRACE_KEY = 'assistente.diagnosticTrace.v1';
 const DIAGNOSTIC_TRACE_LIMIT = 500;
@@ -3781,7 +3781,7 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (!/^https?:$/.test(location.protocol)) return;
   try {
-    const registration = await navigator.serviceWorker.register("./sw.js?v=1.0.2", {
+    const registration = await navigator.serviceWorker.register("./sw.js?v=1.0.3", {
       updateViaCache: "none"
     });
     try { await registration.update(); } catch (_) {}

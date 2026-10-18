@@ -1,0 +1,54 @@
+/* MM Registro: um DOM e comportamento para ambas as aparências.
+   Tokens exatos de cor do tema claro Viagem v2.4.8 (papel e terracota). */
+html[data-theme="light"]{
+ color-scheme:light;background:#fff6e8;
+ --mm-bg-primary:#fff6e8;--mm-bg-secondary:#f9efdf;--mm-bg-elevated:#fffaf2;
+ --mm-app-background:linear-gradient(180deg,#fff6e8,#f9efdf 55%,#fff6e8);
+ --mm-text-primary:#251d19;--mm-text-secondary:#5b493d;--mm-text-tertiary:#68564b;--mm-text-disabled:#9d8d7c;
+ --mm-surface:#fffaf2;--mm-surface-elevated:#f6eadb;--mm-surface-pressed:#ead0b9;--mm-surface-strong:#fffaf2;
+ --mm-history-surface:#fffaf2;--mm-history-border:#d9c3a7;--mm-shadow-inset:inset 0 1px 0 rgba(255,255,255,.85);
+ --mm-border:#d5bfa5;--mm-border-strong:#c9a88c;
+ --mm-accent:#893f33;--mm-accent-strong:#76392f;--mm-accent-contrast:#fff9f2;
+ --mm-danger:#983f37;--mm-success:#566347;--mm-warning:#b57b50;
+ --bg-0:#fff6e8;--bg-1:#f9efdf;--bg-2:#f6eadb;
+ --surface:#fffaf2;--surface-2:#f6eadb;--surface-3:#f2e1ce;--surface-soft:#fffaf2;--surface-glass:#fffaf2;
+ --text:#251d19;--text-soft:#5b493d;--muted:#68564b;--line:#d5bfa5;--line-strong:#c9a88c;
+ --accent:#893f33;--accent-2:#76392f;--accent-soft:#f2e1ce;
+ --success:#566347;--warning:#b57b50;--danger:#983f37;--danger-soft:#f7ddd5;
+ --shadow-lg:0 24px 60px rgba(113,84,54,.13);--shadow-md:0 14px 32px rgba(113,84,54,.12);--shadow-sm:0 8px 18px rgba(113,84,54,.09);
+}
+html[data-theme="light"] body.mm-registro{background-color:#fff6e8!important;color:var(--mm-text-primary);--mm-accent:#893f33!important;--mm-accent-strong:#76392f!important;--mm-accent-contrast:#fff9f2!important}
+html[data-theme="light"] body.mm-registro :is(.mm-primary-header,.mm-secondary-header,.mm-history-sticky-zone,.mm-history-sticky-zone::before,.mm-secondary-layer.mm-export-preview-layer){background-color:#fff6e8!important;background-image:var(--mm-app-background)!important}
+html[data-theme="light"] body.mm-registro :is(.mm-card,.panel,.list-card,.summary-card,.chart-card,.chart-filter-card,.history-tools,.history-day-card,.history-item,.history-row,.record-card,.record-row,.entry-card,.stat-card,.new-entry){
+ background:var(--mm-surface)!important;color:var(--mm-text-primary)!important;border-color:var(--mm-border)!important;box-shadow:0 12px 28px rgba(113,84,54,.08),var(--mm-shadow-inset)!important;
+}
+html[data-theme="light"] body.mm-registro :is(.settings-row,.menu-item,.settings-group>.settings-row:nth-child(2),.settings-group>.settings-row:last-child,.settings-group>.settings-row:nth-child(2):last-child,.more-menu-list>.menu-item){background:var(--mm-surface)!important;border-color:var(--mm-border)!important;color:var(--mm-text-primary)!important}
+html[data-theme="light"] body.mm-registro .mm-tabbar{background:rgba(255,246,232,.96)!important;border-color:#cbb69c!important;box-shadow:0 12px 35px rgba(113,84,54,.16)!important}
+html[data-theme="light"] body.mm-registro :is(.mm-tabbar__button.is-active,.mm-tabbar__button[aria-selected="true"]){background:#f2e1ce!important;color:#893f33!important}
+html[data-theme="light"] body.mm-registro :is(.sheet:not(.export-sheet),.dialog,dialog,.mm-secondary-sheet,.full-panel,.modal,.mm-confirm-dialog,.mm-language-dialog,.mm-appearance-dialog,.manager-shell,.mm-manager-shell){background:#fffaf2!important;color:var(--mm-text-primary)!important;border-color:var(--mm-border)!important}
+html[data-theme="light"] body.mm-registro :is(input,select,textarea,.date-display,.date-control,.search-wrap,.filter-select-btn,.mm-history-filter-sticky .search-wrap,.mm-history-filter-sticky .filter-select-btn,.mm-history-filter-sticky .date-control,.mm-export-preview-sheet .export-preview-filters .date-control){background-color:#fffefa!important;background-image:none;color:#29201b!important;-webkit-text-fill-color:currentColor;border-color:#cbb99e!important}
+html[data-theme="light"] body.mm-registro :is(input,textarea)::placeholder{color:#68564b!important;opacity:1}
+html[data-theme="light"] body.mm-registro :is(.mm-history-filter-sticky,.mm-export-preview-sheet .export-preview-filters,.export-preview-list .history-day-card,.export-preview-list .record,.export-preview-list .record-card,.export-preview-list .history-item){background:var(--mm-history-surface)!important;border-color:var(--mm-history-border)!important}
+html[data-theme="light"] body.mm-registro :is(.mm-history-filter-sticky .filter-clear,.mm-history-filter-sticky .clear-filters-btn,.mm-export-preview-sheet .export-preview-filters .filter-clear){background:#f2e1ce!important;color:#57382e!important;border-color:#c9a88c!important}
+html[data-theme="light"] body.mm-registro :is(.mm-icon-button,.mm-back-button,.sheet-close,.back-circle,.secondary-btn,.secondary-button,.outline-btn,.mini-button,.liquid-button){color:var(--mm-text-primary);border-color:var(--mm-border)!important}
+html[data-theme="light"] body.mm-registro :is(.primary-btn,.primary-button,.button-primary,.btn-primary){background:#893f33!important;color:#fff9f2!important;border-color:#893f33!important}
+html[data-theme="light"] body.mm-registro :is(.danger-outline-btn,.danger-btn){color:#983f37!important}
+html[data-theme="light"] body.mm-registro .mm-destructive-zone>.danger-outline-btn{color:#fff8f7!important}
+html[data-theme="light"] body.mm-registro :is(.manager-label,.manager-weight-note strong,.export-preview-list .record-main,.record-main,.history-card__title,.summary-number){color:#251d19!important}
+html[data-theme="light"] body.mm-registro :is(.manager-rename,.mm-leading-icon,.mm-row-chevron){color:#893f33!important}
+html[data-theme="light"] body.mm-registro :is(.privacy-policy-content,.privacy-policy-content a,.support-copy,.section-subcopy,.entry-subtitle,.filter-row label,.record-meta){color:var(--mm-text-secondary)}
+/* Painel segue a estrutura existente de seleção de idioma. */
+body.mm-registro .mm-appearance-dialog .appearance-options{display:grid;gap:8px}
+body.mm-registro .mm-appearance-dialog .appearance-option{width:100%;min-height:57px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;text-align:left;border-radius:14px;border:1px solid var(--mm-border);background:var(--mm-surface-elevated);color:var(--mm-text-primary);font-family:var(--mm-font-ui);font-size:16px;cursor:pointer}
+body.mm-registro .mm-appearance-dialog .appearance-option.is-active{border-color:var(--mm-accent);color:var(--mm-accent)}
+body.mm-registro .mm-appearance-dialog .appearance-option [data-mm-appearance-check]{color:var(--mm-accent);font-size:20px}
+body.mm-registro .mm-appearance-dialog .appearance-copy{color:var(--mm-text-secondary);font-size:14px;margin:4px 0 16px}
+body.mm-registro .mm-appearance-dialog .appearance-close{min-height:44px;width:100%;margin-top:15px}
+/* Painéis legados cuja pintura noturna usa gradientes fixos, inclusive com !important. */
+html[data-theme="light"] body.mm-registro :is(.mm-analysis-sheet,.analysis-stat-card,.chart-summary-card,.status-pill,.manager-row,.export-sheet,.export-sheet .full-panel,#chartDialog .chart-card){background:#fffaf2!important;color:#251d19!important;border-color:#d5bfa5!important}
+html[data-theme="light"] body.mm-registro .mm-export-preview-sheet .export-preview-actionbar{background:linear-gradient(180deg,rgba(255,246,232,0),rgba(255,246,232,.94) 28%,rgba(255,246,232,.99) 100%)!important}
+html[data-theme="light"] body.mm-registro .hero-overlay{background:linear-gradient(180deg,rgba(255,250,242,0),rgba(255,250,242,.18))!important}
+html[data-theme="light"] body.mm-registro :is(.chart-card,.manager-row,.analysis-stat-card,.chart-summary-card) :is(h2,h3,strong,small,span,p){color:var(--mm-text-primary)}
+html[data-theme="light"] body.mm-registro .language-option{background:#fffefa!important;color:#251d19!important;border-color:#d5bfa5!important}
+html[data-theme="light"] body.mm-registro .language-option.is-active{background:#f2e1ce!important;border-color:#893f33!important}
+html[data-theme="light"] body.mm-registro :is(.language-option b,.appearance-option b){color:#893f33!important}
