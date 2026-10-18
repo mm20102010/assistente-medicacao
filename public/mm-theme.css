@@ -292,3 +292,27 @@ body.mm-registro dialog.mm-appearance-dialog .dialog-actions.single>button{
   body.mm-registro dialog.mm-appearance-dialog h2{font-size:24px!important;}
   body.mm-registro .mm-appearance-dialog .appearance-option{min-height:60px;padding:10px 12px;}
 }
+
+
+/* Aparência clara: componentes legados com cores fixas (Viagem: creme/terracota).
+   Regras isoladas pelo tema; aparência escura permanece inalterada. */
+html[data-theme="light"] body.mm-registro :is(.analysis-period-grid > label > span,.chart-note,.analysis-note,.analysis-empty,.analysis-card p,.analysis-card li){color:#5b493d!important;}
+html[data-theme="light"] body.mm-registro :is(.analysis-card,.analysis-preview .analysis-card){background:#fffaf2!important;color:#251d19!important;border-color:#d5bfa5!important;box-shadow:0 10px 24px rgba(113,84,54,.08)!important;}
+html[data-theme="light"] body.mm-registro .analysis-card :is(h4,strong){color:#251d19!important;}
+html[data-theme="light"] body.mm-registro .analysis-secondary-btn{background:#f2e1ce!important;border-color:#c9a88c!important;color:#57382e!important;}
+html[data-theme="light"] body.mm-registro .assistente-reminder-row{border-color:#d5bfa5!important;background:#fffaf2!important;color:#251d19!important;box-shadow:none!important;}
+html[data-theme="light"] body.mm-registro .assistente-reminder-row>.mm-leading-icon{color:#893f33!important;}
+html[data-theme="light"] body.mm-registro .assistente-reminder-copy strong{color:#251d19!important;}
+html[data-theme="light"] body.mm-registro .assistente-reminder-copy small{color:#5b493d!important;}
+html[data-theme="light"] body.mm-registro .assistente-switch i{background:#d9c3a7!important;}
+html[data-theme="light"] body.mm-registro .assistente-switch input:checked+i{background:linear-gradient(180deg,#b8604d,#893f33)!important;}
+html[data-theme="light"] body.mm-registro .assistente-switch input:focus-visible+i{outline-color:rgba(137,63,51,.35)!important;}
+/* Ações e ícones específicos do Assistente fora dos estilos canônicos. */
+html[data-theme="light"] body.mm-registro .assistente-home-action{background:#fffaf2!important;border-color:#d5bfa5!important;color:#251d19!important;box-shadow:none!important;}
+html[data-theme="light"] body.mm-registro .assistente-home-action>.mm-leading-icon,
+html[data-theme="light"] body.mm-registro :is(.assistente-history-row,.assistente-schedule-row) .record-icon,
+html[data-theme="light"] body.mm-registro .assistente-inline-action{color:#893f33!important;}
+html[data-theme="light"] body.mm-registro :is(.assistente-history-row,.assistente-schedule-row) .record-icon{background:#f2e1ce!important;}
+html[data-theme="light"] body.mm-registro .assistente-home-action__copy strong{color:#251d19!important;}
+html[data-theme="light"] body.mm-registro .assistente-home-action__copy small,
+html[data-theme="light"] body.mm-registro .assistente-home-action>b{color:#5b493d!important;}

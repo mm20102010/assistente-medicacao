@@ -1,4 +1,4 @@
-// appearance refresh: focus and field-contrast correction without version/build changes
+// appearance refresh: theme-aware charts and remaining controls (same version/build)
 const CACHE = "assistente-medicacao-v1.0.3-cg";
 const APP_SHELL = "./";
 const ASSETS = [

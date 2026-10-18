@@ -1912,6 +1912,9 @@ function wrapCanvasText(ctx, text, maxWidth) {
   return lines;
 }
 
+
+// Relatórios usam a mesma paleta ativa da interface; ramo escuro preserva as cores originais.
+function mmAnalysisInk(dark, light) { return document.documentElement.dataset.theme === 'light' ? light : dark; }
 function createAnalysisReportCanvas(height = 2100) {
   const width = 1080;
   const canvas = document.createElement("canvas");
@@ -1919,12 +1922,12 @@ function createAnalysisReportCanvas(height = 2100) {
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   const bg = ctx.createLinearGradient(0, 0, width, height);
-  bg.addColorStop(0, "#06111f");
-  bg.addColorStop(.55, "#0c2541");
-  bg.addColorStop(1, "#081423");
+  bg.addColorStop(0, mmAnalysisInk("#06111f", "#fff6e8"));
+  bg.addColorStop(.55, mmAnalysisInk("#0c2541", "#f9efdf"));
+  bg.addColorStop(1, mmAnalysisInk("#081423", "#fff6e8"));
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(157,193,245,.08)";
+  ctx.fillStyle = mmAnalysisInk("rgba(157,193,245,.08)", "rgba(205,166,132,.10)");
   ctx.beginPath(); ctx.arc(width - 90, 120, 124, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(70, height - 120, 134, 0, Math.PI * 2); ctx.fill();
   ctx.textAlign = "left";
@@ -1933,15 +1936,15 @@ function createAnalysisReportCanvas(height = 2100) {
 }
 
 function drawAnalysisReportHeader(ctx, { title, subtitle, kicker = tr('analysis.exportKicker') }, margin = 54) {
-  ctx.fillStyle = "rgba(231,238,246,.74)";
+  ctx.fillStyle = mmAnalysisInk("rgba(231,238,246,.74)", "#68564b");
   ctx.font = `700 20px ${EXPORT_FONT_SERIF}`;
   ctx.fillText(kicker, margin, margin + 8);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = mmAnalysisInk("#ffffff", "#251d19");
   ctx.font = `700 56px ${EXPORT_FONT_SERIF}`;
   const titleLines = wrapCanvasText(ctx, title, 900);
   let y = margin + 42;
   titleLines.forEach(line => { ctx.fillText(line, margin, y); y += 62; });
-  ctx.fillStyle = "rgba(231,238,246,.82)";
+  ctx.fillStyle = mmAnalysisInk("rgba(231,238,246,.82)", "#5b493d");
   ctx.font = `400 26px ${EXPORT_FONT_SERIF}`;
   const subtitleLines = wrapCanvasText(ctx, subtitle, 920);
   y += 4;
@@ -1958,19 +1961,19 @@ function drawAnalysisMetricGrid(ctx, metrics, y, { margin = 54, cardWidth = 972,
     const x=margin + col*(width+gap);
     const top=y + row*(height+gap);
     drawRoundedRect(ctx,x,top,width,height,26);
-    ctx.fillStyle="rgba(7,18,34,.82)"; ctx.fill();
-    ctx.strokeStyle="rgba(149,182,222,.24)"; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle="rgba(231,238,246,.72)";
+    ctx.fillStyle=mmAnalysisInk("rgba(7,18,34,.82)", "#fffaf2"); ctx.fill();
+    ctx.strokeStyle=mmAnalysisInk("rgba(149,182,222,.24)", "#d5bfa5"); ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.72)", "#68564b");
     ctx.font=`700 18px ${EXPORT_FONT_SERIF}`;
     const labels=wrapCanvasText(ctx,metric.label,width-44).slice(0,2);
     labels.forEach((line,i)=>ctx.fillText(line,x+22,top+18+i*21));
-    ctx.fillStyle="#ffffff";
+    ctx.fillStyle=mmAnalysisInk("#ffffff", "#251d19");
     ctx.font=`700 32px ${EXPORT_FONT_SERIF}`;
     const values=wrapCanvasText(ctx,String(metric.value ?? '—'),width-44).slice(0,2);
     const valueY=top+62;
     values.forEach((line,i)=>ctx.fillText(line,x+22,valueY+i*34));
     if (metric.note) {
-      ctx.fillStyle="rgba(231,238,246,.62)";
+      ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.62)", "#68564b");
       ctx.font=`400 16px ${EXPORT_FONT_SERIF}`;
       const note=wrapCanvasText(ctx,metric.note,width-44)[0] || '';
       ctx.fillText(note,x+22,top+height-25);
@@ -1989,12 +1992,12 @@ function measureAnalysisTextCard(ctx, title, items, width = 972) {
 function drawAnalysisTextCard(ctx, title, items, y, { margin = 54, cardWidth = 972 } = {}) {
   const measured=measureAnalysisTextCard(ctx,title,items,cardWidth);
   drawRoundedRect(ctx,margin,y,cardWidth,measured.height,26);
-  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
-  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle="#ffffff";
+  ctx.fillStyle=mmAnalysisInk("rgba(7,18,34,.84)", "#fffaf2"); ctx.fill();
+  ctx.strokeStyle=mmAnalysisInk("rgba(149,182,222,.20)", "#d5bfa5"); ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle=mmAnalysisInk("#ffffff", "#251d19");
   ctx.font=`700 28px ${EXPORT_FONT_SERIF}`;
   ctx.fillText(title,margin+26,y+22);
-  ctx.fillStyle="rgba(242,247,252,.92)";
+  ctx.fillStyle=mmAnalysisInk("rgba(242,247,252,.92)", "#5b493d");
   ctx.font=`400 24px ${EXPORT_FONT_SERIF}`;
   let lineY=y+68;
   for (const line of measured.prepared) {
@@ -2026,25 +2029,25 @@ function shortAnalysisDate(iso) {
 
 function drawAnalysisLineChartCard(ctx, { title, subtitle, series }, y, { margin = 54, cardWidth = 972, height = 500 } = {}) {
   drawRoundedRect(ctx,margin,y,cardWidth,height,26);
-  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
-  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
-  ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
+  ctx.fillStyle=mmAnalysisInk("rgba(7,18,34,.84)", "#fffaf2"); ctx.fill();
+  ctx.strokeStyle=mmAnalysisInk("rgba(149,182,222,.20)", "#d5bfa5"); ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle=mmAnalysisInk("#ffffff", "#251d19"); ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
+  ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.68)", "#68564b"); ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
   const subtitleLines=wrapCanvasText(ctx,subtitle,cardWidth-52).slice(0,2);
   subtitleLines.forEach((line,i)=>ctx.fillText(line,margin+26,y+58+i*23));
 
   const chartX=margin+66, chartY=y+126, chartW=cardWidth-104, chartH=height-190;
   const values=(series||[]).map(item=>Number(item.value)||0);
   const maxValue=Math.max(1,...values);
-  ctx.strokeStyle="rgba(183,207,235,.16)"; ctx.lineWidth=1;
-  ctx.fillStyle="rgba(231,238,246,.56)"; ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
+  ctx.strokeStyle=mmAnalysisInk("rgba(183,207,235,.16)", "#d5bfa5"); ctx.lineWidth=1;
+  ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.56)", "#68564b"); ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
   for (let i=0;i<=4;i++) {
     const gy=chartY + chartH - (chartH*i/4);
     ctx.beginPath(); ctx.moveTo(chartX,gy); ctx.lineTo(chartX+chartW,gy); ctx.stroke();
     ctx.fillText(String(Math.round(maxValue*i/4)),margin+18,gy-8);
   }
   if (!series?.length) {
-    ctx.fillStyle="rgba(231,238,246,.60)"; ctx.font=`400 22px ${EXPORT_FONT_SERIF}`;
+    ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.60)", "#68564b"); ctx.font=`400 22px ${EXPORT_FONT_SERIF}`;
     ctx.fillText(tr('analysis.noData'),chartX,chartY+chartH/2);
     return y+height;
   }
@@ -2054,15 +2057,15 @@ function drawAnalysisLineChartCard(ctx, { title, subtitle, series }, y, { margin
     ...item
   }));
   const fill=ctx.createLinearGradient(0,chartY,0,chartY+chartH);
-  fill.addColorStop(0,'rgba(107,174,239,.32)'); fill.addColorStop(1,'rgba(107,174,239,.02)');
+  fill.addColorStop(0,mmAnalysisInk('rgba(107,174,239,.32)', 'rgba(184,96,77,.22)')); fill.addColorStop(1,mmAnalysisInk('rgba(107,174,239,.02)', 'rgba(184,96,77,.02)'));
   ctx.beginPath(); ctx.moveTo(points[0].x,chartY+chartH); points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.lineTo(points.at(-1).x,chartY+chartH); ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
-  ctx.beginPath(); points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.strokeStyle="#75b6f0"; ctx.lineWidth=4; ctx.stroke();
+  ctx.beginPath(); points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.strokeStyle=mmAnalysisInk("#75b6f0", "#893f33"); ctx.lineWidth=4; ctx.stroke();
   if (points.length<=31) {
-    ctx.fillStyle="#dcecff";
+    ctx.fillStyle=mmAnalysisInk("#dcecff", "#fff9f2");
     points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();});
   }
   const labelIndexes=[0,Math.floor((points.length-1)/4),Math.floor((points.length-1)/2),Math.floor((points.length-1)*3/4),points.length-1].filter((v,i,a)=>a.indexOf(v)===i);
-  ctx.fillStyle="rgba(231,238,246,.62)"; ctx.font=`400 15px ${EXPORT_FONT_SANS}`; ctx.textAlign="center";
+  ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.62)", "#68564b"); ctx.font=`400 15px ${EXPORT_FONT_SANS}`; ctx.textAlign="center";
   labelIndexes.forEach(index=>ctx.fillText(shortAnalysisDate(points[index].label),points[index].x,chartY+chartH+16));
   ctx.textAlign="left";
   return y+height;
@@ -2070,10 +2073,10 @@ function drawAnalysisLineChartCard(ctx, { title, subtitle, series }, y, { margin
 
 function drawAnalysisBarChartCard(ctx, { title, subtitle, bars }, y, { margin = 54, cardWidth = 972, height = 500 } = {}) {
   drawRoundedRect(ctx,margin,y,cardWidth,height,26);
-  ctx.fillStyle="rgba(7,18,34,.84)"; ctx.fill();
-  ctx.strokeStyle="rgba(149,182,222,.20)"; ctx.lineWidth=2; ctx.stroke();
-  ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
-  ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
+  ctx.fillStyle=mmAnalysisInk("rgba(7,18,34,.84)", "#fffaf2"); ctx.fill();
+  ctx.strokeStyle=mmAnalysisInk("rgba(149,182,222,.20)", "#d5bfa5"); ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle=mmAnalysisInk("#ffffff", "#251d19"); ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.fillText(title,margin+26,y+22);
+  ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.68)", "#68564b"); ctx.font=`400 18px ${EXPORT_FONT_SERIF}`;
   const subtitleLines=wrapCanvasText(ctx,subtitle,cardWidth-52).slice(0,2);
   subtitleLines.forEach((line,i)=>ctx.fillText(line,margin+26,y+58+i*23));
   const chartX=margin+54, chartY=y+136, chartW=cardWidth-108, chartH=height-210;
@@ -2084,10 +2087,10 @@ function drawAnalysisBarChartCard(ctx, { title, subtitle, bars }, y, { margin = 
     const h=(value/maxValue)*(chartH-58);
     const x=chartX+index*(barW+gap), top=chartY+chartH-58-h;
     drawRoundedRect(ctx,x,top,barW,h||3,18);
-    ctx.fillStyle="rgba(87,157,224,.82)"; ctx.fill();
-    ctx.fillStyle="#ffffff"; ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.textAlign="center";
+    ctx.fillStyle=mmAnalysisInk("rgba(87,157,224,.82)", "#ac6551"); ctx.fill();
+    ctx.fillStyle=mmAnalysisInk("#ffffff", "#251d19"); ctx.font=`700 28px ${EXPORT_FONT_SERIF}`; ctx.textAlign="center";
     ctx.fillText(String(value),x+barW/2,Math.max(chartY,top-38));
-    ctx.fillStyle="rgba(231,238,246,.68)"; ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
+    ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.68)", "#68564b"); ctx.font=`400 16px ${EXPORT_FONT_SANS}`;
     const labelLines=wrapCanvasText(ctx,bar.label,barW-12).slice(0,3);
     labelLines.forEach((line,i)=>ctx.fillText(line,x+barW/2,chartY+chartH-42+i*19));
   });
@@ -2097,7 +2100,7 @@ function drawAnalysisBarChartCard(ctx, { title, subtitle, bars }, y, { margin = 
 
 function drawAnalysisReportFooter(ctx, canvas, page, pages = null) {
   const margin=54;
-  ctx.fillStyle="rgba(231,238,246,.58)";
+  ctx.fillStyle=mmAnalysisInk("rgba(231,238,246,.58)", "#68564b");
   ctx.font=`400 17px ${EXPORT_FONT_SERIF}`;
   const localizedName=tr('app.title');
   const reportName = localizedName === 'Medication Assistant' ? localizedName : `${localizedName} / Medication Assistant`;
