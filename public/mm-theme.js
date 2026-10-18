@@ -35,7 +35,14 @@ paint(); // antes do CSS e da primeira pintura, tal como em Viagem.
 function init(){
  const trigger=document.getElementById('appearanceBtn'),dialog=document.getElementById('appearanceDialog');
  if(!trigger||!dialog)return;
- trigger.addEventListener('click',()=>{refresh();if(dialog.showModal)dialog.showModal();else dialog.setAttribute('open','');});
+ trigger.addEventListener('click',()=>{
+  refresh();
+  if(dialog.showModal)dialog.showModal();else dialog.setAttribute('open','');
+  // showModal() foca automaticamente o primeiro botão ('Claro'), criando uma falsa segunda seleção.
+  // O título recebe o foco inicial; Tab continua navegando pelas opções normalmente.
+  const title=dialog.querySelector('#appearanceDialogTitle');
+  if(title){title.tabIndex=-1;title.focus({preventScroll:true});}
+ });
  dialog.querySelectorAll('[data-mm-appearance-option]').forEach(button=>button.addEventListener('click',()=>{
   choice=button.dataset.mmAppearanceOption;
   try{localStorage.setItem(key,choice);}catch{}

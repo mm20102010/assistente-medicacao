@@ -1,4 +1,4 @@
-// appearance refresh: ensure theme refinements propagate without version/build changes
+// appearance refresh: focus and field-contrast correction without version/build changes
 const CACHE = "assistente-medicacao-v1.0.3-cg";
 const APP_SHELL = "./";
 const ASSETS = [
