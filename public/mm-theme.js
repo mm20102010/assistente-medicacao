@@ -5,9 +5,9 @@ const app=document.currentScript?.dataset.mmApp||'starter';
 const key=`mm.appearance.${app}`,root=document.documentElement;
 const values=['light','dark','auto'];
 const labels={
- 'pt-BR':{title:'Aparência',light:'Claro',dark:'Escuro',auto:'Automático',desc:'Usar a aparência do dispositivo',close:'Fechar'},
- 'en-US':{title:'Appearance',light:'Light',dark:'Dark',auto:'Automatic',desc:'Match device appearance',close:'Close'},
- 'es-ES':{title:'Aspecto',light:'Claro',dark:'Oscuro',auto:'Automático',desc:'Usar el aspecto del dispositivo',close:'Cerrar'}
+ 'pt-BR':{title:'Aparência',light:'Claro',dark:'Escuro',auto:'Automático',desc:'Escolha entre claro, escuro ou automático.',close:'Cancelar'},
+ 'en-US':{title:'Appearance',light:'Light',dark:'Dark',auto:'Automatic',desc:'Choose light, dark, or automatic.',close:'Cancel'},
+ 'es-ES':{title:'Aspecto',light:'Claro',dark:'Oscuro',auto:'Automático',desc:'Elige claro, oscuro o automático.',close:'Cancelar'}
 };
 const media=window.matchMedia?.('(prefers-color-scheme: dark)');
 let choice='dark'; // mantém o padrão anterior até o usuário alterar.
